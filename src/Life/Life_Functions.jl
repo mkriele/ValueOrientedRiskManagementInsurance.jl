@@ -29,7 +29,9 @@ function IGCash(cap_mkt::CapMkt, mv_0, alloc, cost)
           InvestCash(alloc.name[i],
                      cap_mkt.rfr,
                      mv_0 * alloc.total[1] * alloc.all[1,i],
-                     zeros(Float64, size(alloc.all, 1))))
+                     zeros(Float64, size(alloc.all, 1)),
+                     alloc.lgd[i],
+                     alloc.cqs[i]))
   end
   IGCash(investments, mv_0,
          zeros(Float64, size(alloc.all, 1)), alloc, cost)

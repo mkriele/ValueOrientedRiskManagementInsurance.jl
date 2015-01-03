@@ -48,6 +48,8 @@ type InvestCash <: Invest
   proc::RiskFreeRate        ## deterministic process
   mv_0::Float64             ## initial market value
   mv::Vector{Float64}       ## market value eoy
+  lgd::Float64              ## loss given default
+  cqs::Symbol               ## rating of counter-party
 end
 
 ## investments per investment group
@@ -57,6 +59,8 @@ type Alloc  ## asset allocation for each year
   name::Vector{Symbol}      ## names of investments within group
   total::Vector{Float64}    ## alloc. for the whole invest. group
   all::Array{Float64, 2}    ## alloc. for each asset within ig
+  lgd::Vector{Float64}       ## loss given default for each cp
+  cqs::Vector{Symbol}       ## rating for each cp (or "na")
 end
 
 type IGCost

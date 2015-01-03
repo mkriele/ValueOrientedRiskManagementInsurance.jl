@@ -14,7 +14,6 @@ function S2NotImplemented(x...)
   return S2NotImplemented(zeros(Float64, 2))
 end
 
-typealias S2Def S2NotImplemented
 typealias S2Life S2NotImplemented
 typealias S2Health S2NotImplemented
 typealias S2NonLife S2NotImplemented
@@ -25,6 +24,11 @@ typealias S2MktFx S2NotImplemented
 typealias S2MktConc S2NotImplemented
 
 typealias S2Def2 S2NotImplemented
+
+typealias S2LifeSx S2NotImplemented
+typealias S2LifePx S2NotImplemented
+typealias S2LifeCost S2NotImplemented
+typealias S2LifeCat S2NotImplemented
 
 
 ## projection parameters for s2-calculations apart from
@@ -64,9 +68,7 @@ type S2MktEq <: S2Module
 end
 
 type S2Mkt <: S2Module
-  mds_symb::Vector{Symbol}
   mds::Vector{S2Module}
-  mds_scr::Array{Float64, 2}  ## scr gross, scr net
   corr_up::Matrix{Float64}
   corr_down::Matrix{Float64}
   scr::Vector{Float64}
@@ -77,15 +79,19 @@ type S2Def1 <: S2Module
   slgd::Vector{Float64}
   u::Matrix{Float64}
   v::Vector{Float64}
+  scr_par::Dict{Symbol, Vector{Float64}}
   scr::Vector{Float64}
 end
 
 type S2Def <: S2Module
   mds::Vector{S2Module}
-  mds_scr::Array{Float64, 2}  ## scr gross, scr net
   corr::Matrix{Float64}
   scr::Vector{Float64}
 end
+
+## solvency 2 life risk ======================================
+
+
 
 ## solvency 2 operational risk ==================================
 
@@ -99,9 +105,7 @@ end
 
 ## solvency 2 total =============================================
 type S2 <: S2Module
-  mds_symb::Vector{Symbol}
   mds::Vector{S2Module}
-  mds_scr::Array{Float64, 2}  ## scr gross, scr net
   balance::DataFrame
   corr::Matrix{Float64}
   bscr::Vector{Float64}

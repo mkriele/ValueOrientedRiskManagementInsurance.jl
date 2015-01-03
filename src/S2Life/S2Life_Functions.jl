@@ -16,19 +16,17 @@ end
 function S2MktInt(p::ProjParam,
                   s2_balance::DataFrame,
                   ds2_mkt_int::Dict{Symbol, Any})
-  s2_mkt_int = S2MktInt(ds2_mkt_int)
-  s2_mkt_int.balance = deepcopy(s2_balance)
-  for int_type_symb in s2_mkt_int.shock_type
-  end
-  for int_type_symb in s2_mkt_int.shock_type
-    append!(s2_mkt_int.balance,
-            s2bal(p, s2_mkt_int,
+  mkt_int = S2MktInt(ds2_mkt_int)
+  mkt_int.balance = deepcopy(s2_balance)
+  for int_type_symb in mkt_int.shock_type
+    append!(mkt_int.balance,
+            s2bal(p, mkt_int,
                   (inv, s2_int) ->
                   mktintshock!(inv, s2_int, int_type_symb),
                   int_type_symb))
   end
-  scr!(s2_mkt_int)
-  return s2_mkt_int
+  scr!(mkt_int)
+  return mkt_int
 end
 
 ## S2MktEq ------------------------------------------------------
@@ -46,32 +44,30 @@ end
 
 function S2MktEq(p::ProjParam,
                  s2_balance::DataFrame,
-                 s2_mkt_eq::Dict{Symbol, Any},
+                 ds2_mkt_eq::Dict{Symbol, Any},
                  eq2type)
-  s2mkt_eq = S2MktEq(s2_mkt_eq)
-  merge!(s2mkt_eq.eq2type, eq2type)
-  s2mkt_eq.balance = deepcopy(s2_balance)
-  for eq_type_symb in s2mkt_eq.shock_type
-    append!(s2mkt_eq.balance,
-            s2bal(p, s2mkt_eq,
+  mkt_eq = S2MktEq(ds2_mkt_eq)
+  merge!(mkt_eq.eq2type, eq2type)
+  mkt_eq.balance = deepcopy(s2_balance)
+  for eq_type_symb in mkt_eq.shock_type
+    append!(mkt_eq.balance,
+            s2bal(p, mkt_eq,
                   (inv, s2_eq) ->
                   mkteqshock!(inv, s2_eq, eq_type_symb),
                   eq_type_symb))
   end
-  scr!(s2mkt_eq)
-  return s2mkt_eq
+  scr!(mkt_eq)
+  return mkt_eq
 end
 
 
 ## S2Mkt --------------------------------------------------------
-function S2Mkt(s2_mkt::Dict{Symbol, Any})
-  mds_symb = [:S2MktInt, :S2MktEq, :S2MktSpread]
+function S2Mkt(ds2_mkt::Dict{Symbol, Any})
   mds = Array(S2Module, 0)
-  mds_scr = zeros(Float64, length(mds_symb), 2)
-  corr_up = s2_mkt[:corr](s2_mkt[:raw], s2_mkt[:adj], :up)
-  corr_down = s2_mkt[:corr](s2_mkt[:raw], s2_mkt[:adj], :down)
+  corr_up = ds2_mkt[:corr](ds2_mkt[:raw], ds2_mkt[:adj], :up)
+  corr_down = ds2_mkt[:corr](ds2_mkt[:raw], ds2_mkt[:adj], :down)
   scr = zeros(Float64, 2)
-  return S2Mkt(mds_symb, mds, mds_scr, corr_up, corr_down, scr)
+  return S2Mkt(mds, corr_up, corr_down, scr)
 end
 
 function S2Mkt(p::ProjParam,
@@ -80,15 +76,15 @@ function S2Mkt(p::ProjParam,
                ds2_mkt_eq::Dict{Symbol, Any},
                eq2type::Dict{Symbol, Symbol},
                ds2_mkt::Dict{Symbol, Any} )
-  s2mkt = S2Mkt(ds2_mkt)
-  push!(s2mkt.mds, S2MktInt(p, s2_balance, ds2_mkt_int))
-  push!(s2mkt.mds, S2MktEq(p, s2_balance, ds2_mkt_eq, eq2type))
-  push!(s2mkt.mds, S2MktProp(p, s2_balance))
-  push!(s2mkt.mds, S2MktSpread(p, s2_balance))
-  push!(s2mkt.mds, S2MktFx(p, s2_balance))
-  push!(s2mkt.mds, S2MktConc(p, s2_balance))
-  scr!(s2mkt)
-  return s2mkt
+  mkt = S2Mkt(ds2_mkt)
+  push!(mkt.mds, S2MktInt(p, s2_balance, ds2_mkt_int))
+  push!(mkt.mds, S2MktEq(p, s2_balance, ds2_mkt_eq, eq2type))
+  push!(mkt.mds, S2MktProp(p, s2_balance))
+  push!(mkt.mds, S2MktSpread(p, s2_balance))
+  push!(mkt.mds, S2MktFx(p, s2_balance))
+  push!(mkt.mds, S2MktConc(p, s2_balance))
+  scr!(mkt)
+  return mkt
 end
 
 ## S2Def1 -------------------------------------------------------
@@ -97,26 +93,65 @@ function S2Def1(ds2_def_1)
   slgd = Array(Float64, 0)
   u = Array(Float64, 0, 0)
   v = Array(Float64, 0)
+  scr_par = Dict{Symbol, Vector{Float64}}()
+  for i = 1:nrow(ds2_def_1[:scr_par])
+    merge!(scr_par,
+           [ds2_def_1[:scr_par][i, :range] =>
+            [ds2_def_1[:scr_par][i, :threshold_upper],
+             ds2_def_1[:scr_par][i, :multiplier]]])
+  end
   scr = zeros(Float64, 2)
-  return S2Def1(tlgd, slgd, u, v, scr)
+  return S2Def1(tlgd, slgd, u, v, scr_par, scr)
 end
 
 function S2Def1(p::ProjParam,
                 ds2_def_1::Dict{Symbol, Any})
-  cqs = filter(x -> ismatch(r"cqs", string(x)),
-               names(ds2_def_1[:prob]))
+  def = S2Def1(ds2_def_1)
+  cqs_vec = filter(x -> ismatch(r"cqs", string(x)),
+                   names(ds2_def_1[:prob]))
+  prob = [ds2_def_1[:prob][1, cqs] for cqs in cqs_vec]
+  def.tlgd = zeros(Float64, length(cqs_vec))
+  def.slgd = zeros(Float64, length(cqs_vec))
+  def.u = Array(Float64, length(cqs_vec), length(cqs_vec))
+  def.v = Array(Float64, length(cqs_vec))
+
+  def.v = 1.5 * prob .* (1 .- prob) ./ (2.5 .- prob)
+  for i = 1:size(def.u,1), j = 1:1:size(def.u,2)
+    def.u[i,j] =
+      (1-prob[i]) * prob[i] * (1-prob[j]) * prob[j] /
+      (1.25 * (prob[i] + prob[j]) - prob[i] * prob[j])
+  end
+  invs = InvPort(p.t_0, p.T, p.cap_mkt, p.invs_par...)
+  for i = 1:length(invs.igs[:IGCash].investments)
+    j = indexin([invs.igs[:IGCash].investments[i].cqs],
+                cqs_vec)[1]
+    lgd =
+      invs.igs[:IGCash].investments[i].lgd *
+      invs.igs[:IGCash].investments[i].mv_0
+    def.tlgd[j] += lgd
+    def.slgd[j] += lgd * lgd
+  end
+  scr!(def)
+  return def
 end
 
 ## S2Def --------------------------------------------------------
+function S2Def(ds2_def)
+  mds = Array(S2Module, 0)
+  corr = ds2_def[:corr]
+  scr = zeros(Float64, 2)
+  return S2Def(mds, corr, scr)
+end
+
 function S2Def(p::ProjParam,
                s2_balance::DataFrame,
                ds2_def_1::Dict{Symbol, Any},
                ds2_def::Dict{Symbol, Any})
-  s2_def = S2Def(ds2_def)
-  push!(s2_def1.mds, S2Def1(p, ds2_def_1))
-  push!(s2_def2.mds, S2Def2(p, s2_balance))
-  scr!(s2_def)
-  return s2_def
+  def = S2Def(ds2_def)
+  push!(def.mds, S2Def1(p, ds2_def_1))
+  push!(def.mds, S2Def2(p, s2_balance))
+  scr!(def)
+  return def
 end
 
 ## S2Op ---------------------------------------------------------
@@ -126,18 +161,15 @@ S2Op(s2_op::Dict{Symbol, Float64}) =
 
 ## S2 -----------------------------------------------------------
 function   S2()
-  mds_symb = [:S2Mkt, :S2Def, :S2Life, :S2Health, :S2NonLife]
   mds = Array(S2Module, 0)
-  mds_scr = zeros(Float64, length(mds_symb), 2)
   balance = DataFrame()
-  corr = zeros(Float64, length(mds_symb), length(mds_symb))
+  corr = zeros(Float64, 5, 5)
   bscr = zeros(Float64, 2)
   adj_tp = 0.0
   adj_dt = 0.0
   op = S2Op(zeros(Float64, 5)...)
   scr = 0.0
-  return(S2(mds_symb, mds, mds_scr, balance, corr,
-            bscr, adj_tp, adj_dt, op, scr))
+  return(S2(mds, balance, corr, bscr, adj_tp, adj_dt, op, scr))
 end
 
 function  S2(p::ProjParam,
@@ -145,6 +177,8 @@ function  S2(p::ProjParam,
              ds2_mkt_eq::Dict{Symbol, Any},
              eq2type::Dict{Symbol, Symbol},
              ds2_mkt::Dict{Symbol, Any},
+             ds2_def_1::Dict{Symbol, Any},
+             ds2_def::Dict{Symbol, Any},
              ds2_op::Dict{Symbol, Float64},
              ds2::Dict{Symbol, Any})
   s2 = S2()
@@ -158,7 +192,7 @@ function  S2(p::ProjParam,
                       ds2_mkt_int,
                       ds2_mkt_eq, eq2type,
                       ds2_mkt))
-  push!(s2.mds, S2Def(p, s2.balance))
+  push!(s2.mds, S2Def(p, s2.balance, ds2_def_1, ds2_def))
   push!(s2.mds, S2Life(p, s2.balance))
   push!(s2.mds, S2Health(p, s2.balance))
   push!(s2.mds, S2NonLife(p, s2.balance))
@@ -201,6 +235,13 @@ function s2bal(p::ProjParam,
   return hcat(proj.val_0, DataFrame(scen = scen))
 end
 
+## aggregation of scrs of sub-modules
+function aggrscr(mds::Vector{S2Module}, corr::Matrix{Float64})
+  net = Float64[mds[i].scr[NET] for i = 1:length(mds)]
+  gross = Float64[mds[i].scr[GROSS] for i = 1:length(mds)]
+  return [sqrt(net ⋅ (corr * net)), sqrt(gross ⋅ (corr * gross))]
+end
+
 ## basic own funds
 bof(md::S2Module, scen::Symbol) =
   md.balance[md.balance[:scen] .== scen, :invest][1,1] -
@@ -213,22 +254,21 @@ fdb(md::S2Module, scen::Symbol) =
   md.balance[md.balance[:scen] .== scen, :bonus][1,1]
 
 ## S2MktInt -----------------------------------------------------
-function scr!(s2_mkt_int::S2MktInt)
-  scr_net =
-    bof(s2_mkt_int, :be) .-
-  float64([bof(s2_mkt_int, sm) for sm in s2_mkt_int.shock_type])
-  scr_gross =
-    scr_net .- fdb(s2_mkt_int, :be) +
-    float64([fdb(s2_mkt_int, sm) for sm in s2_mkt_int.shock_type])
+function scr!(mkt_int::S2MktInt)
+  net =
+    bof(mkt_int, :be) .-
+  Float64[bof(mkt_int, sm) for sm in mkt_int.shock_type]
+  gross =
+    net .- fdb(mkt_int, :be) +
+    Float64[fdb(mkt_int, sm) for sm in mkt_int.shock_type]
 
-  i_up = findin(s2_mkt_int.shock_type, [:spot_up])[1]
-  i_down = findin(s2_mkt_int.shock_type, [:spot_down])[1]
+  i_up = findin(mkt_int.shock_type, [:spot_up])[1]
+  i_down = findin(mkt_int.shock_type, [:spot_down])[1]
 
-  s2_mkt_int.scen_up = scr_net[i_up] >= scr_net[i_down]
-  s2_mkt_int.scr[NET] = maximum([0.0, scr_net])
-  s2_mkt_int.scr[GROSS] =
-    max(0.0,
-        s2_mkt_int.scen_up ? scr_gross[i_up] : scr_gross[i_down])
+  mkt_int.scen_up = net[i_up] >= net[i_down]
+  mkt_int.scr[NET] = maximum([0.0, net])
+  mkt_int.scr[GROSS] =
+    max(0.0, mkt_int.scen_up ? gross[i_up] : gross[i_down])
 end
 
 function mktintshock!(cap_mkt::CapMkt,
@@ -255,26 +295,24 @@ function mktintshock!(cap_mkt::CapMkt,
 end
 
 ## S2MktEq ------------------------------------------------------
-function scr!(s2_mkt_eq::S2MktEq)
-  scr_net =
-    bof(s2_mkt_eq, :be) .-
-  float64([bof(s2_mkt_eq, sm) for sm in s2_mkt_eq.shock_type])
-  scr_gross =
-    scr_net .- fdb(s2_mkt_eq, :be) +
-    float64([fdb(s2_mkt_eq, sm) for sm in s2_mkt_eq.shock_type])
+function scr!(mkt_eq::S2MktEq)
+  net =
+    bof(mkt_eq, :be) .-
+  Float64[bof(mkt_eq, sm) for sm in mkt_eq.shock_type]
+  gross =
+    net .- fdb(mkt_eq, :be) +
+    Float64[fdb(mkt_eq, sm) for sm in mkt_eq.shock_type]
 
-  s2_mkt_eq.scr[NET] =
-    sqrt(scr_net' * s2_mkt_eq.corr * scr_net)[1]
-  s2_mkt_eq.scr[GROSS] =
-    sqrt(scr_gross' * s2_mkt_eq.corr * scr_gross)[1]
+  mkt_eq.scr[NET] = sqrt(net ⋅ (mkt_eq.corr * net))
+  mkt_eq.scr[GROSS] = sqrt(gross ⋅ (mkt_eq.corr * gross))
 end
 
-function mkteqshock!(invs::InvPort, s2mkt_eq, eq_type::Symbol)
+function mkteqshock!(invs::InvPort, mkt_eq, eq_type::Symbol)
   invs.mv_0 -= invs.igs[:IGStock].mv_0
   invs.igs[:IGStock].mv_0 = 0.0
   for invest in invs.igs[:IGStock].investments
-    if s2mkt_eq.eq2type[invest.name] == eq_type
-      invest.mv_0 *= (1 - s2mkt_eq.shock[eq_type])
+    if mkt_eq.eq2type[invest.name] == eq_type
+      invest.mv_0 *= (1 - mkt_eq.shock[eq_type])
     end
     invs.igs[:IGStock].mv_0 += invest.mv_0
   end
@@ -282,45 +320,50 @@ function mkteqshock!(invs::InvPort, s2mkt_eq, eq_type::Symbol)
 end
 
 ## S2Mkt --------------------------------------------------------
-function scr!(s2_mkt::S2Mkt)
-  scr_net = zeros(Float64, length(s2_mkt.mds))
-  scr_gross = zeros(Float64, length(s2_mkt.mds))
-
+function scr!(mkt::S2Mkt)
   scen_up = false
-  for i = 1:length(s2_mkt.mds)
-    scr_net[i] = s2_mkt.mds[i].scr[NET]
-    scr_gross[i] = s2_mkt.mds[i].scr[GROSS]
-    if :scen_up in names(s2_mkt.mds[i])
-      scen_up = s2_mkt.mds[i].scen_up
+  for i = 1:length(mkt.mds)
+    if :scen_up in names(mkt.mds[i])
+      scen_up = mkt.mds[i].scen_up
     end
   end
-  corr = (scen_up ? s2_mkt.corr_up : s2_mkt.corr_down)
-  s2_mkt.scr[NET] = sqrt(scr_net' * corr * scr_net)[1]
-  s2_mkt.scr[GROSS] = sqrt(scr_gross' * corr * scr_gross)[1]
+  corr = (scen_up ? mkt.corr_up : mkt.corr_down)
+  mkt.scr = aggrscr(mkt.mds, corr)
+end
+
+## S2Def1 -------------------------------------------------------
+function scr!(def::S2Def1)
+  var = def.tlgd ⋅ (def.u * def.tlgd) + def.v ⋅ def.slgd
+  sigma_norm = -sqrt(var)/sum(def.tlgd)
+  if sigma_norm <= def.scr_par[:low][1]
+    def.scr[NET] = def.scr_par[:low][2] * sqrt(var)
+  elseif sigma_norm <= def.scr_par[:medium][1]
+    def.scr[NET] = def.scr_par[:medium][2] * sqrt(var)
+  else
+    def.scr[NET] = sum(def.tlgd)
+  end
+  def.scr[GROSS] = def.scr[NET]
+end
+
+## S2Def --------------------------------------------------------
+function scr!(def::S2Def)
+  def.scr = aggrscr(def.mds, def.corr)
 end
 
 ## S2Op ---------------------------------------------------------
-function scr!(s2op::S2Op, bscr)
-  scr_op_prem =
+function scr!(op::S2Op, bscr)
+  op_prem =
     0.04 *
-    (s2op.prem_earned +
-       max(0, 1.2 * (s2op.prem_earned - s2op.prem_earned_prev)))
-  scr_op_tp = 0.0045 * max(0, s2op.tp)
-  s2op.scr =
-    min(0.3 * bscr,
-        max(scr_op_prem, scr_op_tp)) + 0.25 * s2op.cost_ul
+    (op.prem_earned +
+       max(0, 1.2 * (op.prem_earned - op.prem_earned_prev)))
+  op_tp = 0.0045 * max(0, op.tp)
+  op.scr =
+    min(0.3 * bscr, max(op_prem, op_tp)) + 0.25 * op.cost_ul
 end
 
 ## S2 -----------------------------------------------------------
 function bscr!(s2::S2)
-  scr_net = zeros(Float64, length(s2.mds))
-  scr_gross = zeros(Float64, length(s2.mds))
-  for i = 1:length(s2.mds)
-    scr_net[i] = s2.mds[i].scr[NET]
-    scr_gross[i] = s2.mds[i].scr[GROSS]
-  end
-  s2.bscr[NET] =  sqrt(scr_net' * s2.corr * scr_net)[1]
-  s2.bscr[GROSS] = sqrt(scr_gross' * s2.corr * scr_gross)[1]
+  s2.bscr = aggrscr(s2.mds, s2.corr)
 end
 
 function scr!(s2::S2)
@@ -329,3 +372,5 @@ function scr!(s2::S2)
     max(0.0, min(s2.bscr[GROSS] - s2.bscr[NET], fdb(s2, :be)))
   s2.scr = s2.bscr[GROSS] - s2.adj_tp - s2.adj_dt + s2.op.scr
 end
+
+
