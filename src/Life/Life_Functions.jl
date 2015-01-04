@@ -269,8 +269,6 @@ function spot2forw(s::Vector{Float64})
   return f
 end
 
-
-
 ## investments --------------------------------------------------
 function project!(τ::Int,
                   mv_bop::Float64,

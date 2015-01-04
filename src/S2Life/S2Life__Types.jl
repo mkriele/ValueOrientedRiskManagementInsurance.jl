@@ -14,7 +14,7 @@ function S2NotImplemented(x...)
   return S2NotImplemented(zeros(Float64, 2))
 end
 
-typealias S2Life S2NotImplemented
+# typealias S2Life S2NotImplemented
 typealias S2Health S2NotImplemented
 typealias S2NonLife S2NotImplemented
 
@@ -25,9 +25,11 @@ typealias S2MktConc S2NotImplemented
 
 typealias S2Def2 S2NotImplemented
 
-typealias S2LifeSx S2NotImplemented
 typealias S2LifePx S2NotImplemented
+typealias S2LifeMorb S2NotImplemented
+typealias S2LifeSx S2NotImplemented
 typealias S2LifeCost S2NotImplemented
+typealias S2LifeRevision S2NotImplemented
 typealias S2LifeCat S2NotImplemented
 
 
@@ -89,9 +91,23 @@ type S2Def <: S2Module
   scr::Vector{Float64}
 end
 
-## solvency 2 life risk ======================================
+## solvency 2 life risk =========================================
 
+type S2LifeQx <: S2Module
+  shock_object::Symbol       ## object type to be shocked
+  shock_type::Vector{Symbol} ## type of shock: ([:qx])
+  shock::Float64
+  balance::DataFrame         ## shocked balance sheets
+  corr::Matrix{Float64}      ## trivial:  1
+  mp_select::Vector{Bool}    ## model points selected for shock
+  scr::Vector{Float64}
+end
 
+type S2Life <: S2Module
+  mds::Vector{S2Module}
+  corr::Matrix{Float64}
+  scr::Vector{Float64}
+end
 
 ## solvency 2 operational risk ==================================
 

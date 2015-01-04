@@ -1,4 +1,3 @@
-
 ## constructors =================================================
 ## S2MktInt -----------------------------------------------------
 function S2MktInt(ds2_mkt_int::Dict{Symbol, Any})
@@ -49,14 +48,14 @@ function S2MktEq(p::ProjParam,
   mkt_eq = S2MktEq(ds2_mkt_eq)
   merge!(mkt_eq.eq2type, eq2type)
   mkt_eq.balance = deepcopy(s2_balance)
-  for eq_type_symb in mkt_eq.shock_type
+  for shock_symb in mkt_eq.shock_type
     append!(mkt_eq.balance,
             s2bal(p, mkt_eq,
                   (inv, s2_eq) ->
-                  mkteqshock!(inv, s2_eq, eq_type_symb),
-                  eq_type_symb))
+                  mkteqshock!(inv, s2_eq, shock_symb),
+                  shock_symb))
   end
-  scr!(mkt_eq)
+  scenscr!(mkt_eq)
   return mkt_eq
 end
 
@@ -70,22 +69,29 @@ function S2Mkt(ds2_mkt::Dict{Symbol, Any})
   return S2Mkt(mds, corr_up, corr_down, scr)
 end
 
+
 function S2Mkt(p::ProjParam,
                s2_balance::DataFrame,
-               ds2_mkt_int::Dict{Symbol, Any},
-               ds2_mkt_eq::Dict{Symbol, Any},
-               eq2type::Dict{Symbol, Symbol},
-               ds2_mkt::Dict{Symbol, Any} )
-  mkt = S2Mkt(ds2_mkt)
-  push!(mkt.mds, S2MktInt(p, s2_balance, ds2_mkt_int))
-  push!(mkt.mds, S2MktEq(p, s2_balance, ds2_mkt_eq, eq2type))
+               eq2type::Dict,
+               ds2_mkt_all::Dict)
+  mkt = S2Mkt(ds2_mkt_all[:mkt])
+  push!(mkt.mds, S2MktInt(p, s2_balance, ds2_mkt_all[:mkt_int]))
+  push!(mkt.mds, S2MktEq(p, s2_balance, ds2_mkt_all[:mkt_eq], eq2type))
   push!(mkt.mds, S2MktProp(p, s2_balance))
   push!(mkt.mds, S2MktSpread(p, s2_balance))
   push!(mkt.mds, S2MktFx(p, s2_balance))
   push!(mkt.mds, S2MktConc(p, s2_balance))
-  scr!(mkt)
+  scen_up = false
+  for i = 1:length(mkt.mds)
+    if :scen_up in names(mkt.mds[i])
+      scen_up = mkt.mds[i].scen_up
+    end
+  end
+  corr = (scen_up ? mkt.corr_up : mkt.corr_down)
+  mkt.scr = aggrscr(mkt.mds, corr)
   return mkt
 end
+
 
 ## S2Def1 -------------------------------------------------------
 function S2Def1(ds2_def_1)
@@ -145,13 +151,70 @@ end
 
 function S2Def(p::ProjParam,
                s2_balance::DataFrame,
-               ds2_def_1::Dict{Symbol, Any},
-               ds2_def::Dict{Symbol, Any})
-  def = S2Def(ds2_def)
-  push!(def.mds, S2Def1(p, ds2_def_1))
+               ds2_def_all::Dict)
+  def = S2Def(ds2_def_all[:def])
+  push!(def.mds, S2Def1(p, ds2_def_all[:def_1]))
   push!(def.mds, S2Def2(p, s2_balance))
-  scr!(def)
+  def.scr = aggrscr(def.mds, def.corr)
   return def
+end
+
+## S2LifeQx -----------------------------------------------------
+function S2LifeQx(ds2_life_qx::Dict{Symbol, Any})
+  shock_object = :LiabIns
+  shock_type = [:qx]
+  shock = ds2_life_qx[:shock]
+  balance = DataFrame()
+  corr = eye(1)
+  mp_select = Array(Bool, 0)
+  scr = zeros(Float64, 2)
+  return S2LifeQx(shock_object, shock_type, shock,
+                  balance, corr, mp_select, scr)
+end
+
+function S2LifeQx(p::ProjParam,
+                  s2_balance::DataFrame,
+                  ds2_life_qx::Dict{Symbol, Any})
+  life_qx = S2LifeQx(ds2_life_qx)
+  life_qx.balance = deepcopy(s2_balance)
+  select!(p, life_qx)
+  for shock_symb in life_qx.shock_type
+    append!(life_qx.balance,
+            s2bal(p, life_qx,
+                  (l_ins, l_qx) -> lifeqxshock!(l_ins, l_qx),
+                  shock_symb))
+  end
+  scenscr!(life_qx)
+  return life_qx
+end
+
+
+## S2LifeSx -----------------------------------------------------
+## S2LifePx -----------------------------------------------------
+## S2LifeCost ---------------------------------------------------
+## S2LifeCat ----------------------------------------------------
+
+## S2Life -------------------------------------------------------
+function S2Life(ds2_life::Dict{Symbol, Any})
+  mds = Array(S2Module, 0)
+  corr = ds2_life[:corr]
+  scr = zeros(Float64, 2)
+  return S2Life(mds, corr, scr)
+end
+
+function S2Life(p::ProjParam,
+                s2_balance::DataFrame,
+                ds2_life_all::Dict)
+  life = S2Life(ds2_life_all[:life])
+  push!(life.mds, S2LifeQx(p, s2_balance, ds2_life_all[:life_qx]))
+  push!(life.mds, S2LifePx(p, s2_balance))
+  push!(life.mds, S2LifeMorb(p, s2_balance))
+  push!(life.mds, S2LifeSx(p, s2_balance))
+  push!(life.mds, S2LifeCost(p, s2_balance))
+  push!(life.mds, S2LifeRevision(p, s2_balance))
+  push!(life.mds, S2LifeCat(p, s2_balance))
+  life.scr = aggrscr(life.mds, life.corr)
+  return life
 end
 
 ## S2Op ---------------------------------------------------------
@@ -173,12 +236,10 @@ function   S2()
 end
 
 function  S2(p::ProjParam,
-             ds2_mkt_int::Dict{Symbol, Any},
-             ds2_mkt_eq::Dict{Symbol, Any},
              eq2type::Dict{Symbol, Symbol},
-             ds2_mkt::Dict{Symbol, Any},
-             ds2_def_1::Dict{Symbol, Any},
-             ds2_def::Dict{Symbol, Any},
+             ds2_mkt_all::Dict,
+             ds2_def_all::Dict,
+             ds2_life_all::Dict,
              ds2_op::Dict{Symbol, Float64},
              ds2::Dict{Symbol, Any})
   s2 = S2()
@@ -188,15 +249,12 @@ function  S2(p::ProjParam,
          [:tp => s2.balance[1, :tpg] + s2.balance[1, :bonus]])
   s2.op = S2Op(ds2_op)
 
-  push!(s2.mds, S2Mkt(p, s2.balance,
-                      ds2_mkt_int,
-                      ds2_mkt_eq, eq2type,
-                      ds2_mkt))
-  push!(s2.mds, S2Def(p, s2.balance, ds2_def_1, ds2_def))
-  push!(s2.mds, S2Life(p, s2.balance))
+  push!(s2.mds, S2Mkt(p, s2.balance, eq2type, ds2_mkt_all))
+  push!(s2.mds, S2Def(p, s2.balance, ds2_def_all))
+  push!(s2.mds, S2Life(p, s2.balance, ds2_life_all))
   push!(s2.mds, S2Health(p, s2.balance))
   push!(s2.mds, S2NonLife(p, s2.balance))
-  bscr!(s2)
+  s2.bscr = aggrscr(s2.mds, s2.corr)
   scr!(s2.op, s2.bscr[GROSS])
   scr!(s2)
   return s2
@@ -235,13 +293,6 @@ function s2bal(p::ProjParam,
   return hcat(proj.val_0, DataFrame(scen = scen))
 end
 
-## aggregation of scrs of sub-modules
-function aggrscr(mds::Vector{S2Module}, corr::Matrix{Float64})
-  net = Float64[mds[i].scr[NET] for i = 1:length(mds)]
-  gross = Float64[mds[i].scr[GROSS] for i = 1:length(mds)]
-  return [sqrt(net ⋅ (corr * net)), sqrt(gross ⋅ (corr * gross))]
-end
-
 ## basic own funds
 bof(md::S2Module, scen::Symbol) =
   md.balance[md.balance[:scen] .== scen, :invest][1,1] -
@@ -252,6 +303,26 @@ bof(md::S2Module, scen::Symbol) =
 ## future discretionary benefits
 fdb(md::S2Module, scen::Symbol) =
   md.balance[md.balance[:scen] .== scen, :bonus][1,1]
+
+## scenario based scr calculation
+function scenscr!(mdl::S2Module)
+  net =
+    bof(mdl, :be) .-
+  Float64[bof(mdl, sm) for sm in mdl.shock_type]
+  gross =
+    net .- fdb(mdl, :be) +
+    Float64[fdb(mdl, sm) for sm in mdl.shock_type]
+
+  mdl.scr[NET] = sqrt(net ⋅ (mdl.corr * net))
+  mdl.scr[GROSS] = sqrt(gross ⋅ (mdl.corr * gross))
+end
+
+## aggregation of scrs of sub-modules
+function aggrscr(mds::Vector{S2Module}, corr::Matrix{Float64})
+  net = Float64[mds[i].scr[NET] for i = 1:length(mds)]
+  gross = Float64[mds[i].scr[GROSS] for i = 1:length(mds)]
+  return [sqrt(net ⋅ (corr * net)), sqrt(gross ⋅ (corr * gross))]
+end
 
 ## S2MktInt -----------------------------------------------------
 function scr!(mkt_int::S2MktInt)
@@ -295,18 +366,6 @@ function mktintshock!(cap_mkt::CapMkt,
 end
 
 ## S2MktEq ------------------------------------------------------
-function scr!(mkt_eq::S2MktEq)
-  net =
-    bof(mkt_eq, :be) .-
-  Float64[bof(mkt_eq, sm) for sm in mkt_eq.shock_type]
-  gross =
-    net .- fdb(mkt_eq, :be) +
-    Float64[fdb(mkt_eq, sm) for sm in mkt_eq.shock_type]
-
-  mkt_eq.scr[NET] = sqrt(net ⋅ (mkt_eq.corr * net))
-  mkt_eq.scr[GROSS] = sqrt(gross ⋅ (mkt_eq.corr * gross))
-end
-
 function mkteqshock!(invs::InvPort, mkt_eq, eq_type::Symbol)
   invs.mv_0 -= invs.igs[:IGStock].mv_0
   invs.igs[:IGStock].mv_0 = 0.0
@@ -317,18 +376,6 @@ function mkteqshock!(invs::InvPort, mkt_eq, eq_type::Symbol)
     invs.igs[:IGStock].mv_0 += invest.mv_0
   end
   invs.mv_0 += invs.igs[:IGStock].mv_0
-end
-
-## S2Mkt --------------------------------------------------------
-function scr!(mkt::S2Mkt)
-  scen_up = false
-  for i = 1:length(mkt.mds)
-    if :scen_up in names(mkt.mds[i])
-      scen_up = mkt.mds[i].scen_up
-    end
-  end
-  corr = (scen_up ? mkt.corr_up : mkt.corr_down)
-  mkt.scr = aggrscr(mkt.mds, corr)
 end
 
 ## S2Def1 -------------------------------------------------------
@@ -345,10 +392,47 @@ function scr!(def::S2Def1)
   def.scr[GROSS] = def.scr[NET]
 end
 
-## S2Def --------------------------------------------------------
-function scr!(def::S2Def)
-  def.scr = aggrscr(def.mds, def.corr)
+## S2LifeQx -----------------------------------------------------
+## identify those model points that are subject to mortality
+## risk. This function does not properly take into account
+## second order effects due to the effect of boni.
+## However, for realistic portfolios second order effects are
+## unlikely to change the set of identified model points.
+function select!(p::ProjParam, life_qx::S2LifeQx)
+  life_qx.mp_select = Array(Bool, length(p.l_ins.mps))
+  invs = InvPort(p.t_0, p.T, p.cap_mkt, p.invs_par...)
+  for (m, mp) in enumerate(p.l_ins.mps)
+    tp = tpg(p.t_0,
+             p.cap_mkt.rfr.x,
+             invs.igs[:IGCash].cost.rel,
+             mp)
+    mp_shock = deepcopy(mp)
+    lifeqxshock!(mp_shock, life_qx)
+    tp_shock = tpg(p.t_0,
+                   p.cap_mkt.rfr.x,
+                   invs.igs[:IGCash].cost.rel,
+                   mp_shock)
+    life_qx.mp_select[m] = (tp_shock > tp)
+  end
 end
+
+
+function lifeqxshock!(mp::ModelPoint,  life_qx::S2LifeQx)
+  mp.prob[:qx] =
+    min(1, (1 + life_qx.shock) * array(mp.prob[:qx]))
+  mp.prob[:sx] = min(1 .- mp.prob[:qx], mp.prob[:sx])
+  mp.prob[:px] =  1.0 .- mp.prob[:qx] - mp.prob[:sx]
+end
+
+function lifeqxshock!(l_ins::LiabIns, life_qx::S2LifeQx)
+  for (m, mp) in enumerate(l_ins.mps)
+    if life_qx.mp_select[m]
+      lifeqxshock!(mp, life_qx)
+    end
+  end
+end
+
+
 
 ## S2Op ---------------------------------------------------------
 function scr!(op::S2Op, bscr)
@@ -362,9 +446,6 @@ function scr!(op::S2Op, bscr)
 end
 
 ## S2 -----------------------------------------------------------
-function bscr!(s2::S2)
-  s2.bscr = aggrscr(s2.mds, s2.corr)
-end
 
 function scr!(s2::S2)
   s2.adj_dt = 0.0 ## fixme: deferred tax not implemented
