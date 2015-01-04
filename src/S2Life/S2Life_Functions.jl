@@ -159,38 +159,35 @@ function S2Def(p::ProjParam,
   return def
 end
 
-## S2LifeQx -----------------------------------------------------
-function S2LifeQx(ds2_life_qx::Dict{Symbol, Any})
+## S2LifeBio (mortality risk, longevity risk, lapse risk---------
+function S2LifeBio(ds2_bio::Dict{Symbol, Any})
   shock_object = :LiabIns
-  shock_type = [:qx]
-  shock = ds2_life_qx[:shock]
+  shock_type = ds2_bio[:shock_type]
+  shock = ds2_bio[:shock]
   balance = DataFrame()
   corr = eye(1)
-  mp_select = Array(Bool, 0)
+  mp_select = Dict{Symbol, Vector{Bool}}()
   scr = zeros(Float64, 2)
-  return S2LifeQx(shock_object, shock_type, shock,
-                  balance, corr, mp_select, scr)
+  return S2LifeBio(shock_object, shock_type, shock,
+                   balance, corr, mp_select, scr)
 end
 
-function S2LifeQx(p::ProjParam,
-                  s2_balance::DataFrame,
-                  ds2_life_qx::Dict{Symbol, Any})
-  life_qx = S2LifeQx(ds2_life_qx)
-  life_qx.balance = deepcopy(s2_balance)
-  select!(p, life_qx)
-  for shock_symb in life_qx.shock_type
-    append!(life_qx.balance,
-            s2bal(p, life_qx,
-                  (l_ins, l_qx) -> lifeqxshock!(l_ins, l_qx),
-                  shock_symb))
+function S2LifeBio(p::ProjParam,
+                   s2_balance::DataFrame,
+                   ds2_bio::Dict{Symbol, Any})
+  bio = S2LifeBio(ds2_bio)
+  bio.balance = deepcopy(s2_balance)
+  select!(p, bio)
+  for symb in bio.shock_type
+    append!(bio.balance,
+            s2bal(p, bio,
+                  (l_ins, qxpx) -> bioshock!(l_ins, qxpx, symb),
+                  symb))
   end
-  scenscr!(life_qx)
-  return life_qx
+  scenscr!(bio)
+  return bio
 end
 
-
-## S2LifeSx -----------------------------------------------------
-## S2LifePx -----------------------------------------------------
 ## S2LifeCost ---------------------------------------------------
 ## S2LifeCat ----------------------------------------------------
 
@@ -206,10 +203,10 @@ function S2Life(p::ProjParam,
                 s2_balance::DataFrame,
                 ds2_life_all::Dict)
   life = S2Life(ds2_life_all[:life])
-  push!(life.mds, S2LifeQx(p, s2_balance, ds2_life_all[:life_qx]))
-  push!(life.mds, S2LifePx(p, s2_balance))
+  push!(life.mds, S2LifeBio(p, s2_balance, ds2_life_all[:life_qx]))
+  push!(life.mds, S2LifeBio(p, s2_balance, ds2_life_all[:life_px]))
   push!(life.mds, S2LifeMorb(p, s2_balance))
-  push!(life.mds, S2LifeSx(p, s2_balance))
+  push!(life.mds, S2LifeBio(p, s2_balance, ds2_life_all[:life_sx]))
   push!(life.mds, S2LifeCost(p, s2_balance))
   push!(life.mds, S2LifeRevision(p, s2_balance))
   push!(life.mds, S2LifeCat(p, s2_balance))
@@ -259,7 +256,6 @@ function  S2(p::ProjParam,
   scr!(s2)
   return s2
 end
-
 
 ## other functions ==============================================
 ## S2 balance sheet (unshocked)
@@ -313,8 +309,14 @@ function scenscr!(mdl::S2Module)
     net .- fdb(mdl, :be) +
     Float64[fdb(mdl, sm) for sm in mdl.shock_type]
 
-  mdl.scr[NET] = sqrt(net ⋅ (mdl.corr * net))
-  mdl.scr[GROSS] = sqrt(gross ⋅ (mdl.corr * gross))
+  if :sx_down in mdl.shock_type # special handling for lapse risk
+    i = findmax(net)[2]
+    mdl.scr[NET] = max(0, net[i])
+    mdl.scr[GROSS] = max(0, gross[i])
+  else
+    mdl.scr[NET] = sqrt(net ⋅ (mdl.corr * net))
+    mdl.scr[GROSS] = sqrt(gross ⋅ (mdl.corr * gross))
+  end
 end
 
 ## aggregation of scrs of sub-modules
@@ -392,47 +394,73 @@ function scr!(def::S2Def1)
   def.scr[GROSS] = def.scr[NET]
 end
 
-## S2LifeQx -----------------------------------------------------
+## S2LifeBio ----------------------------------------------------
 ## identify those model points that are subject to mortality
 ## risk. This function does not properly take into account
 ## second order effects due to the effect of boni.
 ## However, for realistic portfolios second order effects are
 ## unlikely to change the set of identified model points.
-function select!(p::ProjParam, life_qx::S2LifeQx)
-  life_qx.mp_select = Array(Bool, length(p.l_ins.mps))
+function select!(p::ProjParam, bio::S2LifeBio)
   invs = InvPort(p.t_0, p.T, p.cap_mkt, p.invs_par...)
-  for (m, mp) in enumerate(p.l_ins.mps)
-    tp = tpg(p.t_0,
-             p.cap_mkt.rfr.x,
-             invs.igs[:IGCash].cost.rel,
-             mp)
-    mp_shock = deepcopy(mp)
-    lifeqxshock!(mp_shock, life_qx)
-    tp_shock = tpg(p.t_0,
-                   p.cap_mkt.rfr.x,
-                   invs.igs[:IGCash].cost.rel,
-                   mp_shock)
-    life_qx.mp_select[m] = (tp_shock > tp)
-  end
-end
-
-
-function lifeqxshock!(mp::ModelPoint,  life_qx::S2LifeQx)
-  mp.prob[:qx] =
-    min(1, (1 + life_qx.shock) * array(mp.prob[:qx]))
-  mp.prob[:sx] = min(1 .- mp.prob[:qx], mp.prob[:sx])
-  mp.prob[:px] =  1.0 .- mp.prob[:qx] - mp.prob[:sx]
-end
-
-function lifeqxshock!(l_ins::LiabIns, life_qx::S2LifeQx)
-  for (m, mp) in enumerate(l_ins.mps)
-    if life_qx.mp_select[m]
-      lifeqxshock!(mp, life_qx)
+  for symb in bio.shock_type
+    merge!(bio.mp_select,
+           [symb => Array(Bool, length(p.l_ins.mps))])
+    for (m, mp) in enumerate(p.l_ins.mps)
+      tp = tpg(p.t_0,
+               p.cap_mkt.rfr.x,
+               invs.igs[:IGCash].cost.rel,
+               mp)
+      mp_shock = deepcopy(mp)
+      bioshock!(mp_shock, bio, symb)
+      tp_shock = tpg(p.t_0,
+                     p.cap_mkt.rfr.x,
+                     invs.igs[:IGCash].cost.rel,
+                     mp_shock)
+      bio.mp_select[symb][m] = (tp_shock > tp)
     end
   end
 end
 
+function bioshock!(mp::ModelPoint,
+                   bio::S2LifeBio,
+                   shock_symb::Symbol)
+  if shock_symb in [:qx, :px]
+    mp.prob[:qx] =
+      min(1, (1 + bio.shock[shock_symb]) *
+            array(mp.prob[:qx]))
+    mp.prob[:sx] = min(1 .- mp.prob[:qx], mp.prob[:sx])
+  else
+    if shock_symb == :sx_down
+      mp.prob[:sx] =
+        max((1 + bio.shock[:sx_down]) *
+              array(mp.prob[:sx]),
+             array(mp.prob[:sx]) .+
+             bio.shock[:sx_down_threshold])
+    elseif shock_symb == :sx_up
+      mp.prob[:sx] =
+       min(1,  (1 + bio.shock[:sx_down]) *
+             array(mp.prob[:sx]))
+    elseif shock_symb == :sx_mass_pension
+      mp.prob[:sx] = [bio.shock[:sx_mass_pension],
+                      mp.prob[2:end, :sx]]
+    else
+       mp.prob[:sx] = [bio.shock[:sx_mass_other],
+                      mp.prob[2:end, :sx]]
+    end
+    mp.prob[:qx] = min(1 .- mp.prob[:sx], mp.prob[:qx])
+  end
+  mp.prob[:px] =  1.0 .- mp.prob[:qx] - mp.prob[:sx]
+end
 
+function bioshock!(l_ins::LiabIns,
+                   bio::S2LifeBio,
+                   shock_symb::Symbol)
+  for (m, mp) in enumerate(l_ins.mps)
+    if bio.mp_select[shock_symb][m]
+      bioshock!(mp, bio, shock_symb)
+    end
+  end
+end
 
 ## S2Op ---------------------------------------------------------
 function scr!(op::S2Op, bscr)
@@ -446,7 +474,6 @@ function scr!(op::S2Op, bscr)
 end
 
 ## S2 -----------------------------------------------------------
-
 function scr!(s2::S2)
   s2.adj_dt = 0.0 ## fixme: deferred tax not implemented
   s2.adj_tp =
