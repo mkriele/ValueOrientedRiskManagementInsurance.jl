@@ -242,19 +242,22 @@ function S2Life(p::ProjParam,
 end
 
 ## S2Op ---------------------------------------------------------
-S2Op(s2_op::Dict{Symbol, Float64}) =
-  S2Op(s2_op[:prem_earned], s2_op[:prem_earned_prev],
-       s2_op[:tp], s2_op[:cost_ul], 0.0)
+S2Op(ds2_op::Dict{Symbol, Float64}, s2_op::Dict) =
+  S2Op(ds2_op,
+       s2_op[:prem_earned],
+       s2_op[:prem_earned_prev],
+       s2_op[:tp],
+       s2_op[:cost_ul], 0.0)
 
 ## S2 -----------------------------------------------------------
-function   S2()
+function   S2(ds2_op, s2_op)
   mds = Array(S2Module, 0)
   balance = DataFrame()
   corr = zeros(Float64, 5, 5)
   bscr = zeros(Float64, 2)
   adj_tp = 0.0
   adj_dt = 0.0
-  op = S2Op(zeros(Float64, 5)...)
+  op = S2Op(ds2_op, s2_op)
   scr = 0.0
   return(S2(mds, balance, corr, bscr, adj_tp, adj_dt, op, scr))
 end
@@ -264,14 +267,13 @@ function  S2(p::ProjParam,
              ds2_mkt_all::Dict,
              ds2_def_all::Dict,
              ds2_life_all::Dict,
+             s2_op::Dict,
              ds2_op::Dict{Symbol, Float64},
              ds2::Dict{Symbol, Any})
-  s2 = S2()
+  s2 = S2(ds2_op, s2_op)
   s2.corr = ds2[:corr]
   s2.balance = s2bal(p)
-  merge!(ds2_op,
-         [:tp => s2.balance[1, :tpg] + s2.balance[1, :bonus]])
-  s2.op = S2Op(ds2_op)
+  s2.op.tp = s2.balance[1, :tpg] + s2.balance[1, :bonus]
 
   push!(s2.mds, S2Mkt(p, s2.balance, eq2type, ds2_mkt_all))
   push!(s2.mds, S2Def(p, s2.balance, ds2_def_all))
@@ -520,12 +522,14 @@ end
 ## S2Op ---------------------------------------------------------
 function scr!(op::S2Op, bscr)
   op_prem =
-    0.04 *
+    op.fac[:prem] *
     (op.prem_earned +
-       max(0, 1.2 * (op.prem_earned - op.prem_earned_prev)))
-  op_tp = 0.0045 * max(0, op.tp)
-  op.scr =
-    min(0.3 * bscr, max(op_prem, op_tp)) + 0.25 * op.cost_ul
+       max(0,
+           op.fac[:prem_py] *
+             (op.prem_earned - op.prem_earned_prev)))
+  op_tp = op.fac[:tp]  * max(0, op.tp)
+  op.scr = min(op.fac[:bscr] * bscr,
+               max(op_prem, op_tp)) + op.fac[:cost] * op.cost_ul
 end
 
 ## S2 -----------------------------------------------------------

@@ -117,6 +117,7 @@ end
 ## solvency 2 operational risk ==================================
 
 type S2Op <: S2Module
+  fac::Dict{Symbol, Float64}
   prem_earned::Float64
   prem_earned_prev::Float64
   tp::Float64
