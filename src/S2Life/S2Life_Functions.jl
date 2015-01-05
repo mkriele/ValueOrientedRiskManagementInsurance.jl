@@ -236,7 +236,7 @@ function S2Life(p::ProjParam,
   push!(life.mds, S2LifeBio(p, s2_balance, d_life[:life_sx]))
   push!(life.mds, S2LifeCost(p, s2_balance, d_life[:life_cost]))
   push!(life.mds, S2LifeRevision(p, s2_balance))
-  push!(life.mds, S2LifeCat(p, s2_balance))
+  push!(life.mds, S2LifeCat(p, s2_balance, d_life[:life_cost]))
   life.scr = aggrscr(life.mds, life.corr)
   return life
 end
@@ -445,33 +445,15 @@ end
 
 function bioshock!(mp::ModelPoint,
                    bio::S2LifeBio,
-                   shock_symb::Symbol)
-  if shock_symb in [:qx, :px]
-    mp.prob[:qx] =
-      min(1, (1 + bio.shock[shock_symb]) *
-            array(mp.prob[:qx]))
-    mp.prob[:sx] = min(1 .- mp.prob[:qx], mp.prob[:sx])
-  else
-    if shock_symb == :sx_down
-      mp.prob[:sx] =
-        max((1 + bio.shock[:sx_down]) *
-              array(mp.prob[:sx]),
-            array(mp.prob[:sx]) .+
-            bio.shock[:sx_down_threshold])
-    elseif shock_symb == :sx_up
-      mp.prob[:sx] =
-        min(1,  (1 + bio.shock[:sx_down]) *
-              array(mp.prob[:sx]))
-    elseif shock_symb == :sx_mass_pension
-      mp.prob[:sx] = [bio.shock[:sx_mass_pension],
-                      mp.prob[2:end, :sx]]
-    else
-      mp.prob[:sx] = [bio.shock[:sx_mass_other],
-                      mp.prob[2:end, :sx]]
-    end
-    mp.prob[:qx] = min(1 .- mp.prob[:sx], mp.prob[:qx])
+                   symb::Symbol)
+  if symb in [:qx, :px]
+    qxpxshock!(mp, bio, symb)
+  elseif symb in [:sx_down, :sx_up,
+                  :sx_mass_pension, :sx_mass_other]
+    sxshock!(mp, bio, symb)
+  elseif symb [:cat]
+    catshock!(mp, bio, symb)
   end
-  mp.prob[:px] =  1.0 .- mp.prob[:qx] - mp.prob[:sx]
 end
 
 function bioshock!(l_ins::LiabIns,
@@ -482,6 +464,36 @@ function bioshock!(l_ins::LiabIns,
       bioshock!(mp, bio, shock_symb)
     end
   end
+end
+
+function qxpxshock!(mp::ModelPoint, bio::S2LifeBio, symb::Symbol)
+  mp.prob[:qx] =
+    min(1, (1 + bio.shock[symb]) * array(mp.prob[:qx]))
+  mp.prob[:sx] = min(1 .- mp.prob[:qx], mp.prob[:sx])
+  mp.prob[:px] =  1.0 .- mp.prob[:qx] - mp.prob[:sx]
+end
+
+function sxshock!(mp::ModelPoint, bio::S2LifeBio, symb::Symbol)
+  if symb == :sx_down
+    mp.prob[:sx] =
+      max((1 + bio.shock[:sx_down]) * array(mp.prob[:sx]),
+          array(mp.prob[:sx]) .+ bio.shock[:sx_down_threshold])
+  elseif symb == :sx_up
+    mp.prob[:sx] =
+      min(1, (1 + bio.shock[symb]) * array(mp.prob[:sx]))
+  elseif symb == :sx_mass_pension
+    mp.prob[1, :sx] = bio.shock[symb]
+  elseif symb == :sx_mass_other
+    mp.prob[1, :sx] = bio.shock[symb]
+  end
+  mp.prob[:qx] = min(1 .- mp.prob[:sx], mp.prob[:qx])
+  mp.prob[:px] =  1.0 .- mp.prob[:qx] - mp.prob[:sx]
+end
+
+function catshock!(mp::ModelPoint, bio::S2LifeBio, symb::Symbol)
+  mp.prob[1, :qx] = min(1, mp.prob[1, :qx] + bio.shock[:symb])
+  mp.prob[1, :sx] = min(1 .- mp.prob[1, :qx], mp.prob[1, :sx])
+  mp.prob[:px] =  1.0 .- mp.prob[:qx] - mp.prob[:sx]
 end
 
 ## S2LifeCost ---------------------------------------------------
