@@ -26,7 +26,7 @@ typealias S2MktConc S2NotImplemented
 typealias S2Def2 S2NotImplemented
 
 typealias S2LifeMorb S2NotImplemented
-typealias S2LifeCost S2NotImplemented
+# typealias S2LifeCost S2NotImplemented
 typealias S2LifeRevision S2NotImplemented
 typealias S2LifeCat S2NotImplemented
 
@@ -96,18 +96,23 @@ type S2LifeBio <: S2Module    ## mortality, longevity, lapse risk
   shock_type::Vector{Symbol}        ## type of shock: ([:qx])
   shock::Dict{Symbol, Any}
   balance::DataFrame                ## shocked balance sheets
-  corr::Matrix{Float64}             ## trivial:  1
   mp_select::Dict{Symbol, Vector{Bool}} ## mps selected for shock
   scr::Vector{Float64}
 end
 
+type S2LifeCost <: S2Module    ## mortality, longevity, lapse risk
+  shock_object::Symbol              ## object type to be shocked
+  shock_type::Vector{Symbol}        ## type of shock: ([:qx])
+  shock::Dict{Symbol, Any}
+  balance::DataFrame                ## shocked balance sheets
+  scr::Vector{Float64}
+end
 
 type S2Life <: S2Module
   mds::Vector{S2Module}
   corr::Matrix{Float64}
   scr::Vector{Float64}
 end
-
 
 ## solvency 2 operational risk ==================================
 

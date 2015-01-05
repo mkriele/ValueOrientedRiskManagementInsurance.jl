@@ -67,6 +67,7 @@ function Product(rfr_price, prob_price, β_in, λ_price)
   dur = nrow(β_in)
   prob = deepcopy(prob_price)
   prob[:px] = 1 .- prob[:qx] - prob[:sx]
+  λ_price[:cum_infl] = cumprod(1 .+ λ_price[:infl])
   return Product(dur, rfr_price, prob, β_in, λ_price,
                  premium(1, rfr_price, prob, β_in, λ_price))
 end
@@ -98,9 +99,11 @@ function ModelPoint(n, t_0, t_start,
   λ = deepcopy(λ_be)[s_future, :]
   λ[:boy] .*= n * ins_sum
   λ[:eoy] .*= n * ins_sum
+  λ[:cum_infl] = cumprod(1 .+ λ_be[:infl])[s_future]
   λ_price = deepcopy(product.λ)[s_future, :]
   λ_price[:boy] .*= n * ins_sum
   λ_price[:eoy] .*= n * ins_sum
+  λ_price[:cum_infl] = cumprod(1 .+ product.λ[:infl])[s_future]
 
   rfr_price = product.rfr[s_future]
   tpg_price_0 = tpg(0,
@@ -309,11 +312,10 @@ function premium(ins_sum, rfr, prob, β, λ)
   lx_boy = [1,cumprod(prob[:px])[1:end-1]]
   v_eoy = 1 ./ cumprod(1 .+ rfr)
   v_boy = [1, v_eoy[1:end-1]]
-  cum_infl = cumprod(1 .+ λ[:infl])
   num =
     sum(lx_boy .* ins_sum .*
-        (v_boy .* λ[:boy] +
-           v_eoy .* (λ[:eoy] .* cum_infl +
+        (v_boy .* λ[:boy] .* λ[:cum_infl] ./ (1 + λ[:infl]) +
+           v_eoy .* (λ[:eoy] .* λ[:cum_infl] +
                        prob[:px] .* β[:px] +
                        prob[:qx] .* β[:qx])
          ))
@@ -326,8 +328,10 @@ end
 ## technical provisions (recursion)
 function tpgrec(τ, tpg, rfr, inv_cost_rel, prob, β, λ)
   disc = 1/(1 + rfr[τ + 1])
-  (-β[τ + 1, :prem] + λ[τ + 1, :boy] +
-     disc * (λ[τ + 1, :eoy] +
+  (-β[τ + 1, :prem] +
+     λ[τ + 1, :boy] *
+     λ[τ + 1, :cum_infl] / (1 + λ[τ + 1, :infl]) +
+     disc * (λ[τ + 1, :eoy] * λ[τ + 1, :cum_infl] +
                prob[τ + 1, :qx] * β[τ + 1, :qx] +
                prob[τ + 1, :sx] * β[τ + 1, :sx] +
                prob[τ + 1, :px] * (β[τ + 1, :px] + tpg))) /
@@ -575,7 +579,9 @@ function projectboy!(τ, proj::Projection, liabs::LiabIns)
     if τ <= mp.dur
       mp.lx_boy[τ] = (τ == 1 ? 1 : mp.lx_boy_next)
       proj.cf[τ, :prem] += mp.lx_boy[τ] * mp.β[τ, :prem]
-      proj.cf[τ, :λ_boy] += mp.lx_boy[τ] * mp.λ[τ, :boy]
+      proj.cf[τ, :λ_boy] +=
+        mp.lx_boy[τ] * mp.λ[τ, :boy] *
+        mp.λ[τ, :cum_infl] / (1 + mp.λ[τ, :infl])
     end
   end
 end
@@ -595,7 +601,8 @@ function projecteoy!(τ,
       for wx in [:qx, :sx, :px]
         proj.cf[τ, wx] += mp.lx_boy[τ] * prob[τ, wx] * mp.β[τ, wx]
       end
-      proj.cf[τ, :λ_eoy] += mp.lx_boy[τ] * mp.λ[τ, :eoy]
+      proj.cf[τ, :λ_eoy] +=
+        mp.lx_boy[τ] * mp.λ[τ, :eoy] * mp.λ[τ, :cum_infl]
       proj.val[τ, :tpg] =
         tpgfixed(τ,
                  cap_mkt.rfr.x[1:liabs.dur],

@@ -165,11 +165,10 @@ function S2LifeBio(ds2_bio::Dict{Symbol, Any})
   shock_type = ds2_bio[:shock_type]
   shock = ds2_bio[:shock]
   balance = DataFrame()
-  corr = eye(1)
   mp_select = Dict{Symbol, Vector{Bool}}()
   scr = zeros(Float64, 2)
   return S2LifeBio(shock_object, shock_type, shock,
-                   balance, corr, mp_select, scr)
+                   balance, mp_select, scr)
 end
 
 function S2LifeBio(p::ProjParam,
@@ -189,6 +188,34 @@ function S2LifeBio(p::ProjParam,
 end
 
 ## S2LifeCost ---------------------------------------------------
+function S2LifeCost(ds2_cost::Dict{Symbol, Any})
+  shock_object = :InvPort_LiabIns
+  shock_type = ds2_cost[:shock_type]
+  shock = ds2_cost[:shock]
+  balance = DataFrame()
+  scr = zeros(Float64, 2)
+  return S2LifeCost(shock_object, shock_type, shock,
+                    balance, scr)
+end
+
+function S2LifeCost(p::ProjParam,
+                    s2_balance::DataFrame,
+                    ds2_cost::Dict{Symbol, Any})
+  cost = S2LifeCost(ds2_cost)
+  cost.balance = deepcopy(s2_balance)
+  for symb in cost.shock_type
+    append!(cost.balance,
+            s2bal(p, cost,
+                  (invs, l_ins, cst) -> costshock!(invs,
+                                                   l_ins,
+                                                   cst),
+                  symb))
+  end
+  scenscr!(cost)
+  return cost
+end
+
+
 ## S2LifeCat ----------------------------------------------------
 
 ## S2Life -------------------------------------------------------
@@ -201,13 +228,13 @@ end
 
 function S2Life(p::ProjParam,
                 s2_balance::DataFrame,
-                ds2_life_all::Dict)
-  life = S2Life(ds2_life_all[:life])
-  push!(life.mds, S2LifeBio(p, s2_balance, ds2_life_all[:life_qx]))
-  push!(life.mds, S2LifeBio(p, s2_balance, ds2_life_all[:life_px]))
+                d_life::Dict)
+  life = S2Life(d_life[:life])
+  push!(life.mds, S2LifeBio(p, s2_balance, d_life[:life_qx]))
+  push!(life.mds, S2LifeBio(p, s2_balance, d_life[:life_px]))
   push!(life.mds, S2LifeMorb(p, s2_balance))
-  push!(life.mds, S2LifeBio(p, s2_balance, ds2_life_all[:life_sx]))
-  push!(life.mds, S2LifeCost(p, s2_balance))
+  push!(life.mds, S2LifeBio(p, s2_balance, d_life[:life_sx]))
+  push!(life.mds, S2LifeCost(p, s2_balance, d_life[:life_cost]))
   push!(life.mds, S2LifeRevision(p, s2_balance))
   push!(life.mds, S2LifeCat(p, s2_balance))
   life.scr = aggrscr(life.mds, life.corr)
@@ -273,16 +300,12 @@ function s2bal(p::ProjParam,
                scen::Symbol)
   cpm = deepcopy(p.cap_mkt)
   l_ins = deepcopy(p.l_ins)
-  if shock! == nothing
-    invs = InvPort(p.t_0, p.T, cpm, p.invs_par...)
-  else
-    if md.shock_object == :CapMkt shock!(cpm, md) end
-    invs = InvPort(p.t_0, p.T, cpm, p.invs_par...)
-    if md.shock_object == :InvPort shock!(invs, md) end
-    if md.shock_object == :LiabIns shock!(l_ins, md) end
-    if md.shock_object == :InvPort_LiabIns
-      shock!(cpm, l_ins, md)
-    end
+  if md.shock_object == :CapMkt shock!(cpm, md) end
+  invs = InvPort(p.t_0, p.T, cpm, p.invs_par...)
+  if md.shock_object == :InvPort shock!(invs, md) end
+  if md.shock_object == :LiabIns shock!(l_ins, md) end
+  if md.shock_object == :InvPort_LiabIns
+    shock!(invs, l_ins, md)
   end
   proj = Projection(p.proj_par..., cpm, invs,
                     l_ins, p.l_other, p.dyn)
@@ -303,19 +326,18 @@ fdb(md::S2Module, scen::Symbol) =
 ## scenario based scr calculation
 function scenscr!(mdl::S2Module)
   net =
-    bof(mdl, :be) .-
-  Float64[bof(mdl, sm) for sm in mdl.shock_type]
+    (bof(mdl, :be) .-
+     Float64[bof(mdl, sm) for sm in mdl.shock_type])
   gross =
-    net .- fdb(mdl, :be) +
-    Float64[fdb(mdl, sm) for sm in mdl.shock_type]
-
-  if :sx_down in mdl.shock_type # special handling for lapse risk
+    (net .- fdb(mdl, :be) .+
+     Float64[fdb(mdl, sm) for sm in mdl.shock_type])
+  if :corr in names(mdl)
+    mdl.scr[NET] = sqrt(net ⋅ (mdl.corr * net))
+    mdl.scr[GROSS] = sqrt(gross ⋅ (mdl.corr * gross))
+  else
     i = findmax(net)[2]
     mdl.scr[NET] = max(0, net[i])
     mdl.scr[GROSS] = max(0, gross[i])
-  else
-    mdl.scr[NET] = sqrt(net ⋅ (mdl.corr * net))
-    mdl.scr[GROSS] = sqrt(gross ⋅ (mdl.corr * gross))
   end
 end
 
@@ -434,17 +456,17 @@ function bioshock!(mp::ModelPoint,
       mp.prob[:sx] =
         max((1 + bio.shock[:sx_down]) *
               array(mp.prob[:sx]),
-             array(mp.prob[:sx]) .+
-             bio.shock[:sx_down_threshold])
+            array(mp.prob[:sx]) .+
+            bio.shock[:sx_down_threshold])
     elseif shock_symb == :sx_up
       mp.prob[:sx] =
-       min(1,  (1 + bio.shock[:sx_down]) *
-             array(mp.prob[:sx]))
+        min(1,  (1 + bio.shock[:sx_down]) *
+              array(mp.prob[:sx]))
     elseif shock_symb == :sx_mass_pension
       mp.prob[:sx] = [bio.shock[:sx_mass_pension],
                       mp.prob[2:end, :sx]]
     else
-       mp.prob[:sx] = [bio.shock[:sx_mass_other],
+      mp.prob[:sx] = [bio.shock[:sx_mass_other],
                       mp.prob[2:end, :sx]]
     end
     mp.prob[:qx] = min(1 .- mp.prob[:sx], mp.prob[:qx])
@@ -459,6 +481,27 @@ function bioshock!(l_ins::LiabIns,
     if bio.mp_select[shock_symb][m]
       bioshock!(mp, bio, shock_symb)
     end
+  end
+end
+
+## S2LifeCost ---------------------------------------------------
+function costshock!(invs::InvPort,
+                    l_ins::LiabIns,
+                    cost::S2LifeCost)
+  shock_eoy =
+    (1 + cost.shock[:cost]) *
+    (1 + cost.shock[:infl]) .^ [1:l_ins.dur]
+  for symb in collect(keys(invs.igs))
+    invs.igs[symb].cost.rel .*= shock_eoy
+    invs.igs[symb].cost.abs .*= shock_eoy
+  end
+  for mp in l_ins.mps
+    mp.λ[:, :boy] .*= (1 + cost.shock[:cost])
+    mp.λ[:, :eoy] .*= (1 + cost.shock[:cost])
+    mp.λ[:, :infl] .+= cost.shock[:infl]
+    mp.λ[:, :cum_infl] =
+      mp.λ[1, :cum_infl] / (1 + mp.λ[1, :infl]) *
+      cumprod(1 .+ mp.λ[:, :infl])
   end
 end
 
