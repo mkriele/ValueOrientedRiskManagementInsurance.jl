@@ -12,9 +12,10 @@ function S2MktInt(ds2_mkt_int::Dict{Symbol, Any})
                   spot_up_abs_min, balance, scr, scen_up)
 end
 
-function S2MktInt(p::ProjParam,
+function S2MktInt(param::ProjParam,
                   s2_balance::DataFrame,
                   ds2_mkt_int::Dict{Symbol, Any})
+  p = deepcopy(param)
   mkt_int = S2MktInt(ds2_mkt_int)
   mkt_int.balance = deepcopy(s2_balance)
   for int_type_symb in mkt_int.shock_type
@@ -41,10 +42,11 @@ function S2MktEq(ds2_mkt_eq::Dict{Symbol, Any})
                  balance, corr, scr)
 end
 
-function S2MktEq(p::ProjParam,
+function S2MktEq(param::ProjParam,
                  s2_balance::DataFrame,
                  ds2_mkt_eq::Dict{Symbol, Any},
                  eq2type)
+  p = deepcopy(param)
   mkt_eq = S2MktEq(ds2_mkt_eq)
   merge!(mkt_eq.eq2type, eq2type)
   mkt_eq.balance = deepcopy(s2_balance)
@@ -70,10 +72,11 @@ function S2Mkt(ds2_mkt::Dict{Symbol, Any})
 end
 
 
-function S2Mkt(p::ProjParam,
+function S2Mkt(param::ProjParam,
                s2_balance::DataFrame,
                eq2type::Dict,
                ds2_mkt_all::Dict)
+  p = deepcopy(param)
   mkt = S2Mkt(ds2_mkt_all[:mkt])
   push!(mkt.mds, S2MktInt(p, s2_balance, ds2_mkt_all[:mkt_int]))
   push!(mkt.mds, S2MktEq(p, s2_balance, ds2_mkt_all[:mkt_eq], eq2type))
@@ -110,8 +113,9 @@ function S2Def1(ds2_def_1)
   return S2Def1(tlgd, slgd, u, v, scr_par, scr)
 end
 
-function S2Def1(p::ProjParam,
+function S2Def1(param::ProjParam,
                 ds2_def_1::Dict{Symbol, Any})
+  p = deepcopy(param)
   def = S2Def1(ds2_def_1)
   cqs_vec = filter(x -> ismatch(r"cqs", string(x)),
                    names(ds2_def_1[:prob]))
@@ -149,9 +153,10 @@ function S2Def(ds2_def)
   return S2Def(mds, corr, scr)
 end
 
-function S2Def(p::ProjParam,
+function S2Def(param::ProjParam,
                s2_balance::DataFrame,
                ds2_def_all::Dict)
+  p = deepcopy(param)
   def = S2Def(ds2_def_all[:def])
   push!(def.mds, S2Def1(p, ds2_def_all[:def_1]))
   push!(def.mds, S2Def2(p, s2_balance))
@@ -171,9 +176,10 @@ function S2LifeBio(ds2_bio::Dict{Symbol, Any})
                    balance, mp_select, scr)
 end
 
-function S2LifeBio(p::ProjParam,
+function S2LifeBio(param::ProjParam,
                    s2_balance::DataFrame,
                    ds2_bio::Dict{Symbol, Any})
+  p = deepcopy(param)
   bio = S2LifeBio(ds2_bio)
   bio.balance = deepcopy(s2_balance)
   select!(p, bio)
@@ -198,9 +204,10 @@ function S2LifeCost(ds2_cost::Dict{Symbol, Any})
                     balance, scr)
 end
 
-function S2LifeCost(p::ProjParam,
+function S2LifeCost(param::ProjParam,
                     s2_balance::DataFrame,
                     ds2_cost::Dict{Symbol, Any})
+  p = deepcopy(param)
   cost = S2LifeCost(ds2_cost)
   cost.balance = deepcopy(s2_balance)
   for symb in cost.shock_type
@@ -226,9 +233,10 @@ function S2Life(ds2_life::Dict{Symbol, Any})
   return S2Life(mds, corr, scr)
 end
 
-function S2Life(p::ProjParam,
+function S2Life(param::ProjParam,
                 s2_balance::DataFrame,
                 d_life::Dict)
+  p = deepcopy(param)
   life = S2Life(d_life[:life])
   push!(life.mds, S2LifeBio(p, s2_balance, d_life[:life_qx]))
   push!(life.mds, S2LifeBio(p, s2_balance, d_life[:life_px]))
@@ -262,7 +270,7 @@ function   S2(ds2_op, s2_op)
   return(S2(mds, balance, corr, bscr, adj_tp, adj_dt, op, scr))
 end
 
-function  S2(p::ProjParam,
+function  S2(param::ProjParam,
              eq2type::Dict{Symbol, Symbol},
              ds2_mkt_all::Dict,
              ds2_def_all::Dict,
@@ -270,10 +278,12 @@ function  S2(p::ProjParam,
              s2_op::Dict,
              ds2_op::Dict{Symbol, Float64},
              ds2::Dict{Symbol, Any})
+  p = deepcopy(param)
   s2 = S2(ds2_op, s2_op)
   s2.corr = ds2[:corr]
   s2.balance = s2bal(p)
   s2.op.tp = s2.balance[1, :tpg] + s2.balance[1, :bonus]
+
 
   push!(s2.mds, S2Mkt(p, s2.balance, eq2type, ds2_mkt_all))
   push!(s2.mds, S2Def(p, s2.balance, ds2_def_all))

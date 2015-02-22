@@ -66,6 +66,10 @@ end
 type IGCost
   rel::Vector{Float64}      ## rel. costs per year incl. infl.
   abs::Vector{Float64}      ## abs. costs per period incl. infl.
+  infl_rel::Vector{Float64} ## inflation for rel. costs
+  infl_abs::Vector{Float64} ## inflation for abs. costs
+  cum_infl_rel::Vector{Float64} ## cum. inflation for rel. costs
+  cum_infl_abs::Vector{Float64} ## cum. inflation for abs. costs
   total::Vector{Float64}    ## total costs per year eoy
 end
 
@@ -104,7 +108,6 @@ type Product
   β::DataFrame              ## benefit profile
   λ::DataFrame              ## cost profile
   prem_norm::Float64        ## norm. premium for insured sum = 1
-  #   tp_norm::Vector{Float}    ## norm. techn. provisions (pricing)
 end
 
 type ModelPoint             ## liability model point
@@ -122,21 +125,22 @@ type ModelPoint             ## liability model point
   gc::Vector{Float64}       ## going concern (fraction per year)
 end
 
-type LiabIns               ## liability portfolio
+type LiabIns                ## liability portfolio
   n::Int                    ## number of model points
   t_0::Int                  ## time at which portfolio is defined
   dur::Int                  ## maximum duration in Liab_port
   mps::Array{ModelPoint, 1} ## model points in portfolio
   gc::Vector{Float64}       ## going concern scaling
+  Δgc::Vector{Float64}      ## Δgc[t] = gc[t + 1] - gc[t]
 end
 
 ## other liabilities --------------------------------------------
 type Debt
   name::Symbol
-  t_0::Int          ## time at which loan has been taken
-  t_mat::Int        ## time at which loan matures
-  τ_0::Int          ## time at loan has been taken rel t_0
-  τ_mat::Int               ## duration of loan relative to t_0
+  t_init::Int            ## time at which loan has been taken
+  t_mat::Int             ## time at which loan matures
+  τ_init::Int            ## time at loan has been taken rel t_0
+  τ_mat::Int             ## duration of loan relative to t_0
   nominal::Float64       ## nominal amount
   coupon::Float64        ## coupon payment (absolute value)
 end
@@ -148,7 +152,7 @@ end
 ## dynamics -----------------------------------------------------
 type Dynamic
   bonus_factor::Float64
-  divid_factor::Float64
+  quota_surp::Float64
   surp_factor::Float64
   surp_0::Float64            ## initial surplus for bonus calc.
   surp_threshold_0::Float64  ## init. surplus threshold for bonus
