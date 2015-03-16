@@ -126,7 +126,6 @@ function ModelPoint(n, t_0, t_start,
   rfr_price = product.rfr[s_future]
   tpg_price_0 = tpg(0,
                     rfr_price,
-                    zeros(Float64, dur),
                     product.prob[s_future, :],
                     β,
                     λ_price)
@@ -134,7 +133,6 @@ function ModelPoint(n, t_0, t_start,
   for τ = 1:dur
     tpg_price[τ] = tpg(τ,
                        rfr_price,
-                       zeros(Float64, dur),
                        product.prob[s_future, :],
                        β,
                        λ_price)
@@ -235,15 +233,17 @@ function Projection(liab_port, tax_rate, tax_credit_0)
     tax = zeros(Float64, dur),
     profit = zeros(Float64, dur),
     divid = zeros(Float64, dur),
-    gc = zeros(Float64, dur),       ## not affecting profit/loss
-    Δtpg = zeros(Float64, dur)      ## not real cf, affects p/l
+    gc = zeros(Float64, dur),        ## not affecting profit/loss
+    Δtpg = zeros(Float64, dur),      ## not real cf, affects p/l
+    cost_prov = zeros(Float64, dur)  ## for the cost provisions
     )
   val = DataFrame(
     invest = zeros(Float64, dur),
     tpg = zeros(Float64, dur),
     l_other = zeros(Float64, dur),
     surplus = zeros(Float64, dur),
-    bonus = zeros(Float64, dur)
+    bonus = zeros(Float64, dur),
+    cost_prov = zeros(Float64, dur)      ## cost provisions
     )
   val_0 = deepcopy(val[1, :])
   return Projection(t_0, dur, cf, val_0, val,
@@ -262,30 +262,27 @@ function Projection(tax_rate,
                     dyn::Dynamic)
   proj = Projection(liabs, tax_rate, tax_credit_0)
   for τ = 1:liabs.dur
-    proj.fixed_cost_gc[τ] +=
-      invs.igs[:IGCash].cost.abs[τ] *
-      invs.igs[:IGCash].cost.cum_infl_abs[τ] *
-      liabs.gc[τ]
-    proj.fixed_cost_gc[τ] +=
-      invs.igs[:IGStock].cost.abs[τ] *
-      invs.igs[:IGStock].cost.cum_infl_abs[τ] *
-      liabs.gc[τ]
+    for ig in [:IGCash, :IGStock]
+      proj.fixed_cost_gc[τ] +=
+        invs.igs[ig].cost.abs[τ] *
+        invs.igs[ig].cost.cum_infl_abs[τ] *
+        liabs.gc[τ]
+    end
   end
   goingconcern!(l_other, liabs.Δgc)
   val0!(cap_mkt, invs, liabs, l_other, proj)
-  proj.cf[:,:gc] =
-    diff(vcat(liabs.gc,0)) *
-    (proj.val_0[1,:invest] -
-       proj.val_0[1,:tpg] -
-       proj.val_0[1,:l_other])
+  proj.cf[:,:gc] = liabs.Δgc * (proj.val_0[1,:invest] -
+                                  proj.val_0[1,:tpg] -
+                                  proj.val_0[1,:l_other])
   for τ = 1:liabs.dur
     project!(τ, cap_mkt, invs, liabs, l_other, dyn, proj)
   end
-  valbonus!(cap_mkt, invs, proj)
+  valbonus!(cap_mkt.rfr.x, proj)
+  valcostprov!(cap_mkt.rfr.x, invs.igs[:IGCash].cost, proj)
   return proj
 end
 
-## other functions ==============================================
+## other functions ##############################################
 ## capital market -----------------------------------------------
 function yield(τ, stock::Stock)
   if τ > 1
@@ -379,7 +376,7 @@ function premium(ins_sum, rfr, prob, β, λ)
 end
 
 ## technical provisions (recursion)
-function tpgrec(τ, tpg, rfr, inv_cost_rel, prob, β, λ)
+function tpgrec(τ, tpg, rfr, prob, β, λ)
   disc = 1/(1 + rfr[τ + 1])
   -β[τ + 1, :prem] +
     λ[τ + 1, :boy] *
@@ -387,37 +384,36 @@ function tpgrec(τ, tpg, rfr, inv_cost_rel, prob, β, λ)
     disc * (λ[τ + 1, :eoy] * λ[τ + 1, :cum_infl] +
               prob[τ + 1, :qx] * β[τ + 1, :qx] +
               prob[τ + 1, :sx] * β[τ + 1, :sx] +
-              prob[τ + 1, :px] * (β[τ + 1, :px] + tpg)) /
-    (1 - disc * inv_cost_rel[τ + 1])
+              prob[τ + 1, :px] * (β[τ + 1, :px] + tpg))
 end
 
-function tpg(τ, rfr, inv_cost_rel, prob, β, λ)
+function tpg(τ, rfr, prob, β, λ)
   dur = nrow(β)
   res = 0.0
   if τ >= dur
     return 0.0
   else
     for s in (dur-1):-1:τ
-      res = tpgrec(s, res, rfr, inv_cost_rel, prob, β, λ)
+      res = tpgrec(s, res, rfr, prob, β, λ)
     end
     return res
   end
 end
 
-tpg(τ, rfr, inv_cost_rel, mp) =
-  tpg(τ, rfr, inv_cost_rel, mp.prob, mp.β, mp.λ)
+tpg(τ, rfr, mp) =
+  tpg(τ, rfr, mp.prob, mp.β, mp.λ)
 
-function tpgfixed(τ, rfr, inv_cost_rel, fixed_cost_gc::Vector)
+
+function tpgfixed(τ, rfr, fixed_cost_gc::Vector)
   dur = length(fixed_cost_gc)
   if dur < τ + 1
     return 0.0
   else
-    disc = cumprod(1 ./ (1 .+
-                         rfr[(τ + 1):dur] .-
-                         inv_cost_rel[(τ + 1):dur]))
+    disc = cumprod(1 ./ (1 .+ rfr[(τ + 1):dur]))
     return fixed_cost_gc[(τ + 1):dur] ⋅ disc
   end
 end
+
 
 ## other liabilities --------------------------------------------
 function pv(τ::Int, cap_mkt::CapMkt, debt::Debt)
@@ -603,16 +599,13 @@ function val0!(cap_mkt::CapMkt,
                l_other::LiabOther,
                proj::Projection)       ## changed
   proj.val_0[1, :invest] = invs.mv_0
-  proj.val_0[1, :tpg] = tpgfixed(0,
-                                 cap_mkt.rfr.x[1:liabs.dur],
-                                 invs.igs[:IGCash].cost.rel,
-                                 proj.fixed_cost_gc)
+  #   proj.val_0[1, :tpg] = tpgfixed(0,
+  #                                  cap_mkt.rfr.x[1:liabs.dur],
+  #                                  invs.igs[:IGCash].cost.rel,
+  #                                  proj.fixed_cost_gc)
   for mp in liabs.mps
     if 0 <= mp.dur
-      proj.val_0[1, :tpg] += tpg(0,
-                                 cap_mkt.rfr.x,
-                                 invs.igs[:IGCash].cost.rel,
-                                 mp)
+      proj.val_0[1, :tpg] += tpg(0, cap_mkt.rfr.x, mp)
     end
   end
   proj.val_0[1, :l_other] = pv(0, cap_mkt, l_other)
@@ -642,11 +635,6 @@ function projecteoy!(τ,
                      liabs::LiabIns,
                      dyn::Dynamic,
                      proj::Projection)
-  proj.val[τ, :tpg] =
-    tpgfixed(τ,
-             cap_mkt.rfr.x[1:liabs.dur],
-             invs.igs[:IGCash].cost.rel,
-             proj.fixed_cost_gc)
   for mp in liabs.mps
     if τ <= mp.dur
       prob = deepcopy(mp.prob)
@@ -661,8 +649,7 @@ function projecteoy!(τ,
         mp.lx_boy[τ] * mp.λ[τ, :eoy] * mp.λ[τ, :cum_infl]
       proj.val[τ, :tpg] +=
         mp.lx_boy[τ] * prob[τ, :px] *
-        tpg(τ, cap_mkt.rfr.x, invs.igs[:IGCash].cost.rel,
-            prob, mp.β, mp.λ)
+        tpg(τ, cap_mkt.rfr.x, prob, mp.β, mp.λ)
     end
   end
   proj.cf[τ, :Δtpg] =
@@ -748,19 +735,40 @@ function project!(τ,
     proj.val[τ, :l_other]
 end
 
-function valbonus!(cap_mkt::CapMkt,
-                   invs::InvPort,
-                   proj::Projection)       ## changed
-  disc_1y = 1 ./ (1 .+ cap_mkt.rfr.x)
-  proj.val[proj.dur, :bonus] = 0.0
-  for τ in [proj.dur-1:-1:1]
-    proj.val[τ, :bonus] =
-      disc_1y[τ + 1] /
-      (1 - disc_1y[τ + 1] * invs.igs[:IGCash].cost.rel[τ + 1]) *
-      (-proj.cf[τ + 1, :bonus] + proj.val[τ + 1, :bonus])
+pvprev(rfr, cf, pv) = (cf + pv) /  (1 + rfr)
+
+function pvvec(rfr::Vector{Float64}, cf)
+  T = length(cf)
+  val = zeros(Float64, T)
+  for t in [T-1:-1:1]
+    val[t] = pvprev(rfr[t + 1], val[t + 1], cf[t + 1])
   end
-  proj.val_0[1, :bonus] =
-    disc_1y[1] /
-    (1 - disc_1y[1] * invs.igs[:IGCash].cost.rel[1]) *
-    (-proj.cf[1, :bonus] + proj.val[1, :bonus])
+  return val
+end
+
+function valbonus!(rfr::Vector{Float64},
+                   proj::Projection)        ## changed
+  proj.val[:bonus] = pvvec(rfr,  -proj.cf[:bonus])
+  proj.val_0[:bonus] =
+    pvprev(rfr[1], -proj.cf[1, :bonus], proj.val[1, :bonus])
+end
+
+function valcostprov!(rfr::Vector{Float64},
+                      cost::IGCost,
+                      proj::Projection)       ## changed
+  proj.cf[1, :cost_prov] =
+    proj.fixed_cost_gc[1] +
+    sum(array(proj.val_0[1, [:tpg, :bonus, :l_other]])) *
+    cost.cum_infl_rel[1] * cost.rel[1]
+  for t = 2:proj.dur
+    proj.cf[t, :cost_prov] =
+      proj.fixed_cost_gc[t] +
+      sum(array(proj.val[t - 1, [:tpg, :bonus, :l_other]])) *
+      cost.cum_infl_rel[t] * cost.rel[t]
+  end
+  proj.val[:cost_prov] =
+    pvvec(rfr - cost.rel,  proj.cf[:cost_prov])
+  proj.val_0[:cost_prov] = pvprev(rfr[1] - cost.rel[1],
+                                  proj.cf[1, :cost_prov],
+                                  proj.val[1, :cost_prov])
 end

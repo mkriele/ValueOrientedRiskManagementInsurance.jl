@@ -442,13 +442,13 @@ function select!(p::ProjParam, bio::S2LifeBio)
     for (m, mp) in enumerate(p.l_ins.mps)
       tp = tpg(p.t_0,
                p.cap_mkt.rfr.x,
-               invs.igs[:IGCash].cost.rel,
+#                invs.igs[:IGCash].cost.rel,
                mp)
       mp_shock = deepcopy(mp)
       bioshock!(mp_shock, bio, symb)
       tp_shock = tpg(p.t_0,
                      p.cap_mkt.rfr.x,
-                     invs.igs[:IGCash].cost.rel,
+#                      invs.igs[:IGCash].cost.rel,
                      mp_shock)
       bio.mp_select[symb][m] = (tp_shock > tp)
     end
