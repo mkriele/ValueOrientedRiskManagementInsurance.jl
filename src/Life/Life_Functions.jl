@@ -258,7 +258,7 @@ function Projection(tax_rate,
                     cap_mkt::CapMkt,
                     invs::InvPort,
                     liabs::LiabIns,
-                    l_other::LiabOther,
+                    liabs_other::LiabOther,
                     dyn::Dynamic)
   proj = Projection(liabs, tax_rate, tax_credit_0)
   for τ = 1:liabs.dur
@@ -269,6 +269,7 @@ function Projection(tax_rate,
         liabs.gc[τ]
     end
   end
+  l_other = deepcopy(liabs_other)
   goingconcern!(l_other, liabs.Δgc)
   val0!(cap_mkt, invs, liabs, l_other, proj)
   proj.cf[:,:gc] = liabs.Δgc * (proj.val_0[1,:invest] -
