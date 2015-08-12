@@ -28,7 +28,7 @@ typealias S2Def2 S2NotImplemented
 typealias S2LifeMorb S2NotImplemented
 # typealias S2LifeCost S2NotImplemented
 typealias S2LifeRevision S2NotImplemented
-typealias S2LifeCat S2NotImplemented
+#typealias S2LifeCat S2NotImplemented
 
 
 ## projection parameters for s2-calculations apart from
@@ -41,7 +41,8 @@ type ProjParam
   l_ins::LiabIns
   l_other::LiabOther
   dyn::Dynamic
-  proj_par::Array{Any, 1}
+  tax_rate::Float64
+  tax_credit_0::Float64
 end
 
 ## solvency 2 market risk =======================================
@@ -121,6 +122,8 @@ type S2Op <: S2Module
   prem_earned::Float64
   prem_earned_prev::Float64
   tp::Float64
+  comp_prem::Float64
+  comp_tp::Float64
   cost_ul::Float64
   scr::Float64
 end

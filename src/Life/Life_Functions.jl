@@ -122,7 +122,7 @@ function ModelPoint(n, t_0, t_start,
   λ_price[:boy] .*= n * ins_sum
   λ_price[:eoy] .*= n * ins_sum
   λ_price[:cum_infl] = cumprod(1 .+ product.λ[:infl])[s_future]
-
+  rfr_price_0 = product.rfr[s_0 == 0 ? 1 : s_0]
   rfr_price = product.rfr[s_future]
   tpg_price_0 = tpg(0,
                     rfr_price,
@@ -137,9 +137,9 @@ function ModelPoint(n, t_0, t_start,
                        β,
                        λ_price)
   end
-  return ModelPoint(n, dur, prob, lx_boy, 0.0,
+  return ModelPoint(n, t_start, dur, prob, lx_boy, 0.0,
                     β, λ,  hypo_bonus_rate,
-                    rfr_price,
+                    rfr_price_0, rfr_price,
                     tpg_price_0, tpg_price,
                     ones(Float64, dur))
 end
@@ -203,21 +203,16 @@ function LiabOther(t_0, df_debts::DataFrame)
 end
 
 ## dynamics -----------------------------------------------------
-function Dynamic(dur, bonus_factor, quota_surp,
-                 surp_factor, surp_0, surp_threshold_0)
+function Dynamic(dur, bonus_factor, quota_surp)
   Dynamic(bonus_factor,
           quota_surp,
-          surp_factor,
-          surp_0,
-          surp_threshold_0,
-          zeros(Float64, dur),
           zeros(Float64, dur))
 end
 
 ## cashflow projection ------------------------------------------
-function Projection(liab_port, tax_rate, tax_credit_0)
-  t_0 = liab_port.t_0
-  dur = liab_port.dur
+function Projection(liabs, tax_rate, tax_credit_0)
+  t_0 = liabs.t_0
+  dur = liabs.dur
   cf = DataFrame(
     qx = zeros(Float64, dur),
     sx = zeros(Float64, dur),
@@ -530,21 +525,24 @@ function alloc!(τ,
 end
 
 ## dynamic bonus rate declaration
-function bonusrate(τ, yield_eoy, mp::ModelPoint, dyn)
-  if dyn.surp[τ] >= dyn.surp_threshold[τ]
-    return max(dyn.bonus_factor * (yield_eoy - mp.rfr_price[τ]),
-               0.0)
-  else
-    return 0.0
-  end
-end
+bonusrate(τ, yield_eoy, rfr_price, bonus_factor) =
+  max(bonus_factor * (yield_eoy - rfr_price), 0.0)
+
+bonusrate(τ, yield_eoy, mp::ModelPoint, dyn) =
+  bonusrate(τ,
+            yield_eoy,
+            ( τ == 0 ? mp.rfr_price_0 : mp.rfr_price[τ]),
+            dyn.bonus_factor)
 
 function biquotient(τ, yield_eoy, cap_mkt,
                     invs::InvPort, mp, dyn)
+  ## Compare currend yield with bonus expectation
+  ## based on experience from previous year
   ind_bonus =
     yieldmkt(τ, cap_mkt) /
     max(eps(),
-        bonusrate(τ, yield_eoy, mp, dyn) + yieldrfr(τ, cap_mkt))
+        bonusrate(τ - 1, yield_eoy, mp, dyn) +
+          yieldrfr(τ, cap_mkt))
   ind_bonus_hypo =
     yieldmkt(0, cap_mkt) /
     max(eps(), mp.bonus_rate_hypo + yieldrfr(0, cap_mkt))
@@ -557,7 +555,11 @@ function δsx(τ, cap_mkt::CapMkt, invs::InvPort, mp::ModelPoint,
   yield_eoy =
     invs.igs[:IGStock].alloc.total[τ] * yieldmkt(τ, cap_mkt) +
     invs.igs[:IGCash].alloc.total[τ] * yieldrfr(τ, cap_mkt)
-  bi_quotient = biquotient(τ, yield_eoy, cap_mkt, invs, mp, dyn)
+  if τ - 1 > mp.t_start
+    bi_quot =  biquotient(τ, yield_eoy, cap_mkt, invs, mp, dyn)
+  else
+    bi_quot = 1
+  end
   state_quot = dynstate(τ, cap_mkt) / dynstate(0, cap_mkt)
   δ_SX = 1.0
   if state_quot < 0.5
@@ -565,31 +567,38 @@ function δsx(τ, cap_mkt::CapMkt, invs::InvPort, mp::ModelPoint,
   elseif  state_quot > 2.0
     δ_SX -= 0.15
   end
-  δ_SX += 0.25 * min(4.0, max(0.0, bi_quotient - 1.2))
+  δ_SX += 0.25 * min(4.0, max(0.0, bi_quot - 1.2))
   return δ_SX
 end
 
 ## dynamic dividend declaration
-function dividend(dyn, invest_pre_divid, liab)
-  return -min(0, (1 + dyn.quota_surp) * liab -invest_pre_divid)
-end
+freesurp(dyn, invest_pre, liab) =
+ max(0, invest_pre - (1 + dyn.quota_surp) * liab)
+
+freesurp(τ, proj::Projection, dyn) =
+  if τ == 1
+      freesurp(dyn,
+               proj.val_0[1, :invest],
+               proj.val_0[1, :tpg] + proj.val_0[1, :l_other])
+  else
+      freesurp(dyn,
+               proj.val[τ-1, :invest],
+               proj.val[τ-1, :tpg] + proj.val[τ-1, :l_other])
+  end
+
 
 ## update dynamic parameters
 function update!(τ, proj::Projection, dyn::Dynamic)
   if τ == 1
-    dyn.surp_threshold[τ] =
-      (1 - dyn.surp_factor) *
-      max(dyn.surp_0, dyn.surp_threshold_0)
-    dyn.surp[τ] =
-      proj.val_0[τ, :invest] /
-      (proj.val_0[τ, :tpg] + proj.val_0[τ, :l_other])
+    dyn.free_surp_boy[τ] =
+      freesurp(dyn,
+               proj.val_0[1, :invest],
+               proj.val_0[1, :tpg] + proj.val_0[1, :l_other])
   else
-    dyn.surp_threshold[τ] =
-      (1 - dyn.surp_factor) *
-      max(dyn.surp[τ - 1], dyn.surp_threshold[τ - 1])
-    dyn.surp[τ] =
-      proj.val[τ-1, :invest] /
-      (proj.val[τ-1, :tpg] + proj.val[τ-1, :l_other])
+    dyn.free_surp_boy[τ] =
+      freesurp(dyn,
+               proj.val[τ-1, :invest],
+               proj.val[τ-1, :tpg] + proj.val[τ-1, :l_other])
   end
 end
 
@@ -600,10 +609,6 @@ function val0!(cap_mkt::CapMkt,
                l_other::LiabOther,
                proj::Projection)       ## changed
   proj.val_0[1, :invest] = invs.mv_0
-  #   proj.val_0[1, :tpg] = tpgfixed(0,
-  #                                  cap_mkt.rfr.x[1:liabs.dur],
-  #                                  invs.igs[:IGCash].cost.rel,
-  #                                  proj.fixed_cost_gc)
   for mp in liabs.mps
     if 0 <= mp.dur
       proj.val_0[1, :tpg] += tpg(0, cap_mkt.rfr.x, mp)
@@ -636,10 +641,19 @@ function projecteoy!(τ,
                      liabs::LiabIns,
                      dyn::Dynamic,
                      proj::Projection)
+  tpg_price_positive = 0.0
+  for mp in liabs.mps
+    if τ <= mp.dur
+      tpg_price_positive +=
+        mp.lx_boy[τ] *
+        max(0, (τ == 1 ? mp.tpg_price_0 : mp.tpg_price[τ-1]))
+    end
+  end
   for mp in liabs.mps
     if τ <= mp.dur
       prob = deepcopy(mp.prob)
-      prob[:,:sx] *= δsx(τ, cap_mkt, invs, mp, dyn)
+      prob[:,:sx] *=
+        δsx(τ, cap_mkt, invs, mp, dyn)
       prob[:,:px] = 1 .- prob[:,:qx] - prob[:,:sx]
       mp.lx_boy_next = mp.lx_boy[τ] * prob[τ, :px]
       for wx in [:qx, :sx, :px]
@@ -675,12 +689,17 @@ function bonus!(τ,
                 invs::InvPort,
                 liabs::LiabIns,
                 dyn::Dynamic,
-                proj)              ## changed
+                proj,              ## changed
+                surp_pre_profit_tax_bonus)
   for mp in liabs.mps
     if τ <= mp.dur
       proj.cf[τ, :bonus] -=
-        mp.lx_boy[τ] * bonusrate(τ, invs.yield[τ], mp, dyn) *
-        (τ == 1 ? mp.tpg_price_0 : mp.tpg_price[τ-1])
+        min(surp_pre_profit_tax_bonus,
+            mp.lx_boy[τ] *
+              bonusrate(τ, invs.yield[τ], mp, dyn) *
+              max(0, (τ == 1 ?
+                        mp.tpg_price_0 :
+                        mp.tpg_price[τ-1])))
     end
   end
 end
@@ -711,7 +730,15 @@ function project!(τ,
   proj.cf[τ, :l_other] -= payprincipal(τ, liab_other)
   proj.val[τ, :l_other] = pv(τ, cap_mkt, liab_other)
   projecteoy!(τ, cap_mkt, invs, liabs, dyn, proj)
-  bonus!(τ, invs, liabs, dyn, proj)
+
+  proj.cf[τ,:tax] = 0.0
+  proj.cf[τ,:bonus] = 0.0
+  surp_pre_profit_tax_bonus =
+    max(0,
+        investpredivid(τ, invs, proj) -
+          proj.val[τ, :tpg] -
+          proj.val[τ, :l_other]  )
+  bonus!(τ, invs, liabs, dyn, proj, surp_pre_profit_tax_bonus)
   proj.cf[τ, :profit] =
     sum(array(proj.cf[τ, [:prem, :invest,
                           :qx, :sx, :px, :λ_boy, :λ_eoy,
@@ -725,7 +752,7 @@ function project!(τ,
 
   proj.val[τ, :invest] = investpredivid(τ, invs, proj)
   proj.cf[τ, :divid] =
-    -dividend(dyn,
+    -freesurp(dyn,
               proj.val[τ, :invest],
               proj.val[τ, :tpg] + proj.val[τ, :l_other])
   proj.val[τ, :invest] +=  proj.cf[τ, :divid]

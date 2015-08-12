@@ -31,7 +31,7 @@ end
 
 ## S2MktEq ------------------------------------------------------
 function S2MktEq(ds2_mkt_eq::Dict{Symbol, Any})
-  shock_object = :InvPort
+  shock_object = :CapMkt_AdjVal0
   shock_type = collect(keys(ds2_mkt_eq[:shock]))
   eq_type = Dict{Symbol, Symbol}()
   balance = DataFrame()
@@ -53,8 +53,8 @@ function S2MktEq(param::ProjParam,
   for shock_symb in mkt_eq.shock_type
     append!(mkt_eq.balance,
             s2bal(p, mkt_eq,
-                  (inv, s2_eq) ->
-                  mkteqshock!(inv, s2_eq, shock_symb),
+                  (invs, s2_eq) ->
+                  mkteqshock!(invs, s2_eq, shock_symb),
                   shock_symb))
   end
   scenscr!(mkt_eq)
@@ -244,7 +244,7 @@ function S2Life(param::ProjParam,
   push!(life.mds, S2LifeBio(p, s2_balance, d_life[:life_sx]))
   push!(life.mds, S2LifeCost(p, s2_balance, d_life[:life_cost]))
   push!(life.mds, S2LifeRevision(p, s2_balance))
-  push!(life.mds, S2LifeCat(p, s2_balance, d_life[:life_cost]))
+  push!(life.mds, S2LifeBio(p, s2_balance, d_life[:life_cat]))
   life.scr = aggrscr(life.mds, life.corr)
   return life
 end
@@ -254,8 +254,7 @@ S2Op(ds2_op::Dict{Symbol, Float64}, s2_op::Dict) =
   S2Op(ds2_op,
        s2_op[:prem_earned],
        s2_op[:prem_earned_prev],
-       s2_op[:tp],
-       s2_op[:cost_ul], 0.0)
+       s2_op[:tp], 0, 0, s2_op[:cost_ul], 0.0)
 
 ## S2 -----------------------------------------------------------
 function   S2(ds2_op, s2_op)
@@ -290,46 +289,66 @@ function  S2(param::ProjParam,
   push!(s2.mds, S2Life(p, s2.balance, ds2_life_all))
   push!(s2.mds, S2Health(p, s2.balance))
   push!(s2.mds, S2NonLife(p, s2.balance))
-  s2.bscr = aggrscr(s2.mds, s2.corr)
-  scr!(s2.op, s2.bscr[GROSS])
-  scr!(s2)
+  scr!(s2, p.tax_credit_0)
   return s2
 end
 
-## other functions ==============================================
+## other functions ##############################################
 ## S2 balance sheet (unshocked)
 function s2bal(p::ProjParam)
   invs = InvPort(p.t_0, p.T, p.cap_mkt, p.invs_par...)
-  proj = Projection(p.proj_par..., p.cap_mkt, invs,
+  proj = Projection(p.tax_rate, p.tax_credit_0, p.cap_mkt, invs,
                     p.l_ins, p.l_other, p.dyn)
-  return hcat(proj.val_0, DataFrame(scen = :be))
+  bal =
+    hcat(proj.val_0, DataFrame(tax_credit = proj.tax_credit_0))
+  return hcat(bal, DataFrame(bof = bof(bal), scen = :be))
 end
 
 ## S2 balance sheet (shocked)
-function s2bal(p::ProjParam,
-               md::S2Module,
-               shock!::Any,
-               scen::Symbol)
+function s2proj(p::ProjParam,
+                md::S2Module,
+                shock!::Any,
+                scen::Symbol)
   cpm = deepcopy(p.cap_mkt)
   l_ins = deepcopy(p.l_ins)
-  if md.shock_object == :CapMkt shock!(cpm, md) end
+  if md.shock_object ==  :CapMkt shock!(cpm, md) end
   invs = InvPort(p.t_0, p.T, cpm, p.invs_par...)
-  if md.shock_object == :InvPort shock!(invs, md) end
+  if md.shock_object == :CapMkt_AdjVal0 shock!(invs, md) end
   if md.shock_object == :LiabIns shock!(l_ins, md) end
   if md.shock_object == :InvPort_LiabIns
     shock!(invs, l_ins, md)
   end
-  proj = Projection(p.proj_par..., cpm, invs,
+
+  proj = Projection(p.tax_rate, p.tax_credit_0, cpm, invs,
                     l_ins, p.l_other, p.dyn)
-  return hcat(proj.val_0, DataFrame(scen = scen))
+  if md.shock_object == :CapMkt_AdjVal0
+    mkt_val0_adj!(proj, invs, md, scen)
+  end
+  return proj
+end
+
+function s2bal(p::ProjParam,
+               md::S2Module,
+               shock!::Any,
+               scen::Symbol)
+  proj = s2proj(p, md, shock!, scen)
+  bal =
+    hcat(proj.val_0, DataFrame(tax_credit = proj.tax_credit_0))
+  return hcat(bal, DataFrame(bof = bof(bal), scen = scen))
 end
 
 ## basic own funds
-bof(md::S2Module, scen::Symbol) =
-  md.balance[md.balance[:scen] .== scen, :invest][1,1] -
-  md.balance[md.balance[:scen] .== scen, :tpg][1,1] -
-  md.balance[md.balance[:scen] .== scen, :l_other][1,1] -
-  md.balance[md.balance[:scen] .== scen, :bonus][1,1]
+bof(bal::DataFrame) =
+  bal[1, :invest][1,1] +
+  bal[1, :tax_credit][1,1] -
+  bal[1, :tpg][1,1] -
+  bal[1, :cost_prov][1,1] -
+  bal[1, :bonus][1,1]
+
+bof(bal::DataFrame, scen::Symbol) =
+  bof(bal[bal[:scen] .== scen, :])
+
+bof(md::S2Module, scen::Symbol) = bof(md.balance, scen)
 
 ## future discretionary benefits
 fdb(md::S2Module, scen::Symbol) =
@@ -341,7 +360,7 @@ function scenscr!(mdl::S2Module)
     (bof(mdl, :be) .-
      Float64[bof(mdl, sm) for sm in mdl.shock_type])
   gross =
-    (net .- fdb(mdl, :be) .+
+    (net .+ fdb(mdl, :be) .-
      Float64[fdb(mdl, sm) for sm in mdl.shock_type])
   if :corr in names(mdl)
     mdl.scr[NET] = sqrt(net ⋅ (mdl.corr * net))
@@ -355,9 +374,12 @@ end
 
 ## aggregation of scrs of sub-modules
 function aggrscr(mds::Vector{S2Module}, corr::Matrix{Float64})
+  scr = zeros(Float64, 2)
   net = Float64[mds[i].scr[NET] for i = 1:length(mds)]
   gross = Float64[mds[i].scr[GROSS] for i = 1:length(mds)]
-  return [sqrt(net ⋅ (corr * net)), sqrt(gross ⋅ (corr * gross))]
+  scr[GROSS] = sqrt(gross ⋅ (corr * gross))
+  scr[NET] = sqrt(net ⋅ (corr * net))
+  return scr
 end
 
 ## S2MktInt -----------------------------------------------------
@@ -366,7 +388,7 @@ function scr!(mkt_int::S2MktInt)
     bof(mkt_int, :be) .-
   Float64[bof(mkt_int, sm) for sm in mkt_int.shock_type]
   gross =
-    net .- fdb(mkt_int, :be) +
+    net .+ fdb(mkt_int, :be) -
     Float64[fdb(mkt_int, sm) for sm in mkt_int.shock_type]
 
   i_up = findin(mkt_int.shock_type, [:spot_up])[1]
@@ -378,41 +400,59 @@ function scr!(mkt_int::S2MktInt)
     max(0.0, mkt_int.scen_up ? gross[i_up] : gross[i_down])
 end
 
-function mktintshock!(cap_mkt::CapMkt,
-                      s2_mkt_int,
-                      int_type::Symbol)
-
-  len = min(length(cap_mkt.rfr.x),
+function rfrshock(rfr::Vector{Float64}, s2_mkt_int, int_type)
+  ## shock the risk free interest rate
+  len = min(length(rfr),
             length(s2_mkt_int.shock[:spot_up]),
             length(s2_mkt_int.shock[:spot_down]))
-  spot = forw2spot(cap_mkt.rfr.x[1:len])
-
-
+  spot = forw2spot(rfr[1:len])
   if int_type == :spot_down
     forw =
       spot2forw(spot .*
                 (1 .+ s2_mkt_int.shock[:spot_down][1:len]))
-  else
+  elseif int_type == :spot_up
     forw =
       spot2forw(spot .+
                 max(spot .* s2_mkt_int.shock[:spot_up][1:len],
                     s2_mkt_int.spot_up_abs_min))
+  else # :be
+      forw = spot2forw(spot)
   end
-  cap_mkt.rfr.x = deepcopy(forw)
+  return forw
 end
+
+function mktintshock!(cap_mkt::CapMkt,
+                      s2_mkt_int,
+                      int_type::Symbol)
+
+  cap_mkt.rfr.x =
+    deepcopy(rfrshock(cap_mkt.rfr.x, s2_mkt_int, int_type))
+end
+
+
 
 ## S2MktEq ------------------------------------------------------
 function mkteqshock!(invs::InvPort, mkt_eq, eq_type::Symbol)
-  invs.mv_0 -= invs.igs[:IGStock].mv_0
-  invs.igs[:IGStock].mv_0 = 0.0
+#   invs = InvPort(p.t_0, p.T, cpm, p.invs_par...)
+
   for invest in invs.igs[:IGStock].investments
     if mkt_eq.eq2type[invest.name] == eq_type
-      invest.mv_0 *= (1 - mkt_eq.shock[eq_type])
+      invest.proc.x .*= (1 + mkt_eq.shock[eq_type])
     end
-    invs.igs[:IGStock].mv_0 += invest.mv_0
   end
-  invs.mv_0 += invs.igs[:IGStock].mv_0
 end
+
+function mkt_val0_adj!(proj::Projection, invs::InvPort,
+                       mkt_eq, eq_type::Symbol)
+  # adjust initial market value for S2 balance sheet
+  for invest in invs.igs[:IGStock].investments
+    if mkt_eq.eq2type[invest.name] == eq_type
+      proj.val_0[1,:invest] +=
+        mkt_eq.shock[eq_type] * invest.mv_0
+    end
+  end
+end
+
 
 ## S2Def1 -------------------------------------------------------
 function scr!(def::S2Def1)
@@ -442,13 +482,11 @@ function select!(p::ProjParam, bio::S2LifeBio)
     for (m, mp) in enumerate(p.l_ins.mps)
       tp = tpg(p.t_0,
                p.cap_mkt.rfr.x,
-#                invs.igs[:IGCash].cost.rel,
                mp)
       mp_shock = deepcopy(mp)
       bioshock!(mp_shock, bio, symb)
       tp_shock = tpg(p.t_0,
                      p.cap_mkt.rfr.x,
-#                      invs.igs[:IGCash].cost.rel,
                      mp_shock)
       bio.mp_select[symb][m] = (tp_shock > tp)
     end
@@ -463,7 +501,7 @@ function bioshock!(mp::ModelPoint,
   elseif symb in [:sx_down, :sx_up,
                   :sx_mass_pension, :sx_mass_other]
     sxshock!(mp, bio, symb)
-  elseif symb [:cat]
+  elseif symb in [:cat]
     catshock!(mp, bio, symb)
   end
 end
@@ -503,7 +541,7 @@ function sxshock!(mp::ModelPoint, bio::S2LifeBio, symb::Symbol)
 end
 
 function catshock!(mp::ModelPoint, bio::S2LifeBio, symb::Symbol)
-  mp.prob[1, :qx] = min(1, mp.prob[1, :qx] + bio.shock[:symb])
+  mp.prob[1, :qx] = min(1, mp.prob[1, :qx] + bio.shock[symb])
   mp.prob[1, :sx] = min(1 .- mp.prob[1, :qx], mp.prob[1, :sx])
   mp.prob[:px] =  1.0 .- mp.prob[:qx] - mp.prob[:sx]
 end
@@ -531,23 +569,31 @@ end
 
 ## S2Op ---------------------------------------------------------
 function scr!(op::S2Op, bscr)
-  op_prem =
+  ## SCR for operational risk
+  op.comp_prem =
     op.fac[:prem] *
     (op.prem_earned +
        max(0,
-           op.fac[:prem_py] *
-             (op.prem_earned - op.prem_earned_prev)))
-  op_tp = op.fac[:tp]  * max(0, op.tp)
-  op.scr = min(op.fac[:bscr] * bscr,
-               max(op_prem, op_tp)) + op.fac[:cost] * op.cost_ul
+           op.prem_earned -
+             op.fac[:prem_py] * op.prem_earned_prev))
+  op.comp_tp = op.fac[:tp]  * max(0, op.tp)
+  op.scr =
+    min(op.fac[:bscr] * bscr, max(op.comp_prem, op.comp_tp)) +
+    op.fac[:cost] * op.cost_ul
 end
 
 ## S2 -----------------------------------------------------------
-function scr!(s2::S2)
+function scr!(s2::S2, tax_credit_0::Float64)
+  ## SCR
+  s2.bscr = aggrscr(s2.mds, s2.corr)
+  scr!(s2.op, s2.bscr[GROSS])
   s2.adj_dt = 0.0 ## fixme: deferred tax not implemented
   s2.adj_tp =
-    max(0.0, min(s2.bscr[GROSS] - s2.bscr[NET], fdb(s2, :be)))
-  s2.scr = s2.bscr[GROSS] - s2.adj_tp - s2.adj_dt + s2.op.scr
+    -max(0.0, min(s2.bscr[GROSS] - s2.bscr[NET], fdb(s2, :be)))
+  s2.adj_dt =
+    -max(tax_credit_0 - (s2.bscr[GROSS] + s2.op.scr + s2.adj_tp),
+        0)
+  s2.scr = s2.bscr[GROSS] + s2.adj_tp + s2.adj_dt + s2.op.scr
 end
 
 

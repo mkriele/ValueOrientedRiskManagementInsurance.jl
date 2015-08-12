@@ -112,6 +112,7 @@ end
 
 type ModelPoint             ## liability model point
   n::Int                    ## number of contracts in model point
+  t_start::Int              ## start year for model point
   dur::Int                  ## remaining duration
   prob::DataFrame           ## biometric probabilities (be)
   lx_boy::Vector{Float64}   ## survivors at boy
@@ -119,10 +120,11 @@ type ModelPoint             ## liability model point
   β::DataFrame              ## conditional benefits / Premium
   λ::DataFrame              ## conditional costs profile
   bonus_rate_hypo::Float64  ## hypothetical bonus rate
+  rfr_price_0::Float64       ## discount rate for pricing at t_0
   rfr_price::Vector{Float64} ## discount rate for pricing
   tpg_price_0::Float64       ## initial techn. prov. for pricing
   tpg_price::Vector{Float64} ## technical provisions for pricing
-  gc::Vector{Float64}       ## going concern (fraction per year)
+  gc::Vector{Float64}        ## going concern (fraction per year)
 end
 
 type LiabIns                ## liability portfolio
@@ -151,13 +153,9 @@ end
 
 ## dynamics -----------------------------------------------------
 type Dynamic
-  bonus_factor::Float64
-  quota_surp::Float64
-  surp_factor::Float64
-  surp_0::Float64            ## initial surplus for bonus calc.
-  surp_threshold_0::Float64  ## init. surplus threshold for bonus
-  surp::Vector{Float64}      ## surplus threshold for bonus calc.
-  surp_threshold::Vector{Float64}  ## surplus threshold for bonus
+  bonus_factor::Float64           ## bonus factor
+  quota_surp::Float64             ## desired surplus ratio
+  free_surp_boy::Vector{Float64}  ## free surplus for bonus calc.
 end
 
 ## cashflow projection ------------------------------------------
