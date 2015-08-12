@@ -138,4 +138,7 @@ type S2 <: S2Module
   adj_dt::Float64
   op::S2Op
   scr::Float64
+  invest_mod::Float64
+  liabs_mod::Float64
+  scr_ratio::Float64
 end

@@ -20,10 +20,12 @@ include("SST/SST_Functions.jl")
 
 # Simplified Life insurer ---------------------------------------
 include("Life/Life__Types.jl")
+include("Life/Life_Constructors.jl")
 include("Life/Life_Functions.jl")
 
 # Simplified Solvency 2 Life ------------------------------------
 include("S2Life/S2Life__Types.jl")
+include("S2Life/S2Life_Constructors.jl")
 include("S2Life/S2Life_Functions.jl")
 
 # Simplified Solvency 2 Non-Life --------------------------------
