@@ -1,13 +1,13 @@
 ## S2MktInt -----------------------------------------------------
 function S2MktInt(ds2_mkt_int::Dict{Symbol, Any})
   shock_object = :CapMkt
-  shock_type = collect(keys(ds2_mkt_int[:shock]))
   shock = ds2_mkt_int[:shock]
   spot_up_abs_min = ds2_mkt_int[:spot_up_abs_min]
   balance = DataFrame()
   scr = zeros(Float64, 2)
   scen_up = false
-  return S2MktInt(shock_object, shock_type, shock,
+  return S2MktInt(shock_object,
+                  shock,
                   spot_up_abs_min, balance, scr, scen_up)
 end
 
@@ -17,7 +17,7 @@ function S2MktInt(param::ProjParam,
   p = deepcopy(param)
   mkt_int = S2MktInt(ds2_mkt_int)
   mkt_int.balance = deepcopy(s2_balance)
-  for int_type_symb in mkt_int.shock_type
+  for int_type_symb in collect(keys(mkt_int.shock))
     append!(mkt_int.balance,
             s2bal(p, mkt_int,
                   (inv, s2_int) ->
@@ -31,13 +31,12 @@ end
 ## S2MktEq ------------------------------------------------------
 function S2MktEq(ds2_mkt_eq::Dict{Symbol, Any})
   shock_object = :CapMkt_AdjVal0
-  shock_type = collect(keys(ds2_mkt_eq[:shock]))
   eq_type = Dict{Symbol, Symbol}()
   balance = DataFrame()
   corr = ds2_mkt_eq[:corr]
   shock = ds2_mkt_eq[:shock]
   scr = zeros(Float64, 2)
-  return S2MktEq(shock_object, shock_type, eq_type, shock,
+  return S2MktEq(shock_object, eq_type, shock,
                  balance, corr, scr)
 end
 
@@ -49,14 +48,14 @@ function S2MktEq(param::ProjParam,
   mkt_eq = S2MktEq(ds2_mkt_eq)
   merge!(mkt_eq.eq2type, eq2type)
   mkt_eq.balance = deepcopy(s2_balance)
-  for shock_symb in mkt_eq.shock_type
+  for shock_symb in collect(keys(mkt_eq.shock))
     append!(mkt_eq.balance,
             s2bal(p, mkt_eq,
                   (invs, s2_eq) ->
                   mkteqshock!(invs, s2_eq, shock_symb),
                   shock_symb))
   end
-  scenscr!(mkt_eq)
+  scr!(mkt_eq)
   return mkt_eq
 end
 
@@ -89,7 +88,7 @@ function S2Mkt(param::ProjParam,
     end
   end
   corr = (scen_up ? mkt.corr_up : mkt.corr_down)
-  mkt.scr = aggrscr(mkt.mds, corr)
+  mkt.scr = scr(mkt, corr)
   return mkt
 end
 
@@ -157,19 +156,24 @@ function S2Def(param::ProjParam,
   def = S2Def(ds2_def_all[:def])
   push!(def.mds, S2Def1(p, ds2_def_all[:def_1]))
   push!(def.mds, S2Def2(p, s2_balance))
-  def.scr = aggrscr(def.mds, def.corr)
+  def.scr = scr(def, def.corr)
   return def
 end
 
 ## S2LifeBio (mortality risk, longevity risk, lapse risk---------
 function S2LifeBio(ds2_bio::Dict{Symbol, Any})
   shock_object = :LiabIns
-  shock_type = ds2_bio[:shock_type]
+  if :shock_param in collect(keys(ds2_bio))
+    shock_param = ds2_bio[:shock_param]
+  else
+    shock_param = Dict()
+  end
   shock = ds2_bio[:shock]
   balance = DataFrame()
   mp_select = Dict{Symbol, Vector{Bool}}()
   scr = zeros(Float64, 2)
-  return S2LifeBio(shock_object, shock_type, shock,
+  return S2LifeBio(shock_object, shock,
+                   shock_param,
                    balance, mp_select, scr)
 end
 
@@ -180,24 +184,28 @@ function S2LifeBio(param::ProjParam,
   bio = S2LifeBio(ds2_bio)
   bio.balance = deepcopy(s2_balance)
   select!(p, bio)
-  for symb in bio.shock_type
+  for symb in collect(keys(bio.shock))
     append!(bio.balance,
             s2bal(p, bio,
-                  (l_ins, qxpx) -> bioshock!(l_ins, qxpx, symb),
+                  (l_ins, wx) -> bioshock!(l_ins, wx, symb),
                   symb))
   end
-  scenscr!(bio)
+  scr!(bio)
   return bio
 end
 
 ## S2LifeCost ---------------------------------------------------
 function S2LifeCost(ds2_cost::Dict{Symbol, Any})
   shock_object = :InvPort_LiabIns
-  shock_type = ds2_cost[:shock_type]
   shock = ds2_cost[:shock]
+  if :shock_param in collect(keys(ds2_cost))
+    shock_param = ds2_cost[:shock_param]
+  else
+    shock_param = Dict()
+  end
   balance = DataFrame()
   scr = zeros(Float64, 2)
-  return S2LifeCost(shock_object, shock_type, shock,
+  return S2LifeCost(shock_object, shock, shock_param,
                     balance, scr)
 end
 
@@ -207,12 +215,12 @@ function S2LifeCost(param::ProjParam,
   p = deepcopy(param)
   cost = S2LifeCost(ds2_cost)
   cost.balance = deepcopy(s2_balance)
-  for symb in cost.shock_type
+  for symb in collect(keys(cost.shock))
     append!(cost.balance,
             s2bal(p, cost, (invs, l_ins, cst) ->
                   costshock!(invs, l_ins, cst), symb))
   end
-  scenscr!(cost)
+  scr!(cost)
   return cost
 end
 
@@ -236,7 +244,7 @@ function S2Life(param::ProjParam,
   push!(life.mds, S2LifeCost(p, s2_balance, d_life[:life_cost]))
   push!(life.mds, S2LifeRevision(p, s2_balance))
   push!(life.mds, S2LifeBio(p, s2_balance, d_life[:life_cat]))
-  life.scr = aggrscr(life.mds, life.corr)
+  life.scr = scr(life, life.corr)
   return life
 end
 

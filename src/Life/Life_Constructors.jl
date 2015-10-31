@@ -1,6 +1,7 @@
 ## capital market -----------------------------------------------
 CapMkt(proc_stock, proc_rfr) =
   CapMkt(deepcopy(proc_stock), deepcopy(proc_rfr))
+
 ## assets -------------------------------------------------------
 function IGCost(df_cost)
   IGCost(df_cost[:, :rel],
@@ -79,20 +80,12 @@ function Product(rfr_price, prob_price, β_in, λ_price)
                  premium(1, rfr_price, prob, β_in, λ_price))
 end
 
-## Time model for model point:
-##
-## project time τ:            0                   dur
-## real time t:      t_start  t_0
-## product time s:   0        s_0                 product.dur
-##                   |--------|-------------------|--------------
-##                            \-------------------/
-##                                     dur
-##                   \----------------------------/
-##                           product.dur
 function ModelPoint(n, t_0, t_start,
                     prob_be, sx_be_fac, λ_be,
                     cost_infl,
-                    hypo_bonus_rate, product, ins_sum)
+                    hypo_bonus_rate, product, ins_sum,
+                    pension_contract)
+  ## Time model for model point: See documentation of type
   s_0 = t_0 - t_start
   dur = product.dur - s_0
   s_future = (s_0 + 1):product.dur
@@ -136,7 +129,8 @@ function ModelPoint(n, t_0, t_start,
                     β, λ,  hypo_bonus_rate,
                     rfr_price_0, rfr_price,
                     tpg_price_0, tpg_price,
-                    ones(Float64, dur))
+                    ones(Float64, dur),
+                    pension_contract)
 end
 
 function LiabIns(t_0, prob_be, λ_be, cost_infl, product, df_port)
@@ -153,7 +147,8 @@ function LiabIns(t_0, prob_be, λ_be, cost_infl, product, df_port)
                           cost_infl[d],
                           df_port[d, :bonus_rate_hypo],
                           product,
-                          df_port[d, :ins_sum]))
+                          df_port[d, :ins_sum],
+                          df_port[d, :pension_contract]))
     dur = max(dur, mps[d].dur)
   end
   gc = zeros(Float64, dur)
@@ -269,7 +264,7 @@ function Projection(tax_rate,
     project!(τ, cap_mkt, invs, liabs, l_other, dyn, proj)
   end
   valbonus!(cap_mkt.rfr.x, proj)
-  valcostprov!(cap_mkt.rfr.x, invs.igs[:IGCash].cost, proj)
+  valcostprov!(cap_mkt.rfr.x, invs, proj)
   return proj
 end
 

@@ -1,6 +1,6 @@
 using Distributions
 
-export value, delta, gamma, Δrtk, rΔrtk, rtk, aggrstress,
+export value, delta, gamma, Δrtk, rΔrtk, rtk, srtk, aggrstress,
 UP, DOWN
 
 ## Constructors -------------------------------------------------
@@ -8,14 +8,9 @@ function RiskFactor(σ::Vector{Float64},
                     corr::Array{Float64, 2},
                     x0::Vector{Float64},
                     h::Vector{Float64},
-                    add::Vector{Bool},
-                    index_spot::Vector{Int},
-                    index_mort::Vector{Int},
-                    index_stock::Vector{Int},
+                    add::Vector{Bool}
                     )
-  return RiskFactor((σ * σ') .* corr,
-                    x0, h, add,
-                    index_spot, index_stock, index_mort)
+  return RiskFactor((σ * σ') .* corr, x0, h, add)
 end
 
 ## Valuation ----------------------------------------------------
@@ -27,9 +22,7 @@ function value(t::Int,
   x_spot = cap_mkt.spot[zb.index] + x[zb.index]
   val = zb.nom / (1 + x_spot)^zb.τ
   if t != 0
-    val *= (1 +
-              cap_mkt.spot[rf.index_spot[t]] +
-              x[rf.index_spot[t]])^t
+    val *= (1 + cap_mkt.spot[t] + x[t])^t
   end
   return val
 end
@@ -59,7 +52,8 @@ function value(t::Int,
                x::Vector{Float64},
                rf::RiskFactor,
                cap_mkt::SSTCapMkt)
-  x_spot = cap_mkt.spot[liabs.index_spot] + x[liabs.index_spot]
+  T = length(cap_mkt.spot)
+  x_spot = cap_mkt.spot[1:T] + x[1:T]
   x_mort = x[liabs.index_mort]
   val = 0.0
   for τ in 1:length(liabs.B_PX)
@@ -68,9 +62,7 @@ function value(t::Int,
       liabs.B_PX[τ] / (1 + x_spot[τ])^τ
   end
   if t != 0
-    val *= (1 +
-              cap_mkt.spot[rf.index_spot[t]] +
-              x[rf.index_spot[t]])^t
+    val *= (1 + cap_mkt.spot[t] + x[t])^t
   end
   return val
 end
@@ -87,7 +79,8 @@ rtk(t::Int,
 ## capital calculation ------------------------------------------
 const UP, DOWN = 1, -1
 
-function rtk(shift::Int,
+"calculates (linear) sensitivities for rtk"
+function srtk(shift::Int,
              assets::Vector{Asset},
              liabs::Liabilities,
              rf::RiskFactor,
@@ -103,7 +96,8 @@ function rtk(shift::Int,
   return rtk_shift
 end
 
-function rtk(shift_1::Int,
+"calculates quadratic sensitivities for rtk"
+function srtk(shift_1::Int,
              shift_2::Int,
              assets::Vector{Asset},
              liabs::Liabilities,
@@ -129,25 +123,27 @@ end
   Float64[rf.add[i] ?  rf.h[i] : rf.x0[i] * rf.h[i]
           for i = 1:length(rf.x0)]
 
+"calculates δ-vector"
 delta(assets::Vector{Asset},
       liabs::Liabilities,
       rf::RiskFactor,
       cap_mkt::SSTCapMkt) =
-  (rtk(UP, assets, liabs, rf, cap_mkt) -
-     rtk(DOWN, assets, liabs, rf, cap_mkt)) ./ (2Δ(rf))
+  (srtk(UP, assets, liabs, rf, cap_mkt) -
+     srtk(DOWN, assets, liabs, rf, cap_mkt)) ./ (2Δ(rf))
 
+"calculates Γ-matrix"
 function gamma(assets::Vector{Asset},
                liabs::Liabilities,
                rf::RiskFactor,
                cap_mkt::SSTCapMkt)
   Δx = Δ(rf)
-  rtk_uu = rtk(UP, UP, assets, liabs, rf, cap_mkt)
-  rtk_ud = rtk(UP, DOWN, assets, liabs, rf, cap_mkt)
-  rtk_du = rtk(DOWN, UP, assets, liabs, rf, cap_mkt)
-  rtk_dd = rtk(DOWN, DOWN, assets, liabs, rf, cap_mkt)
+  rtk_uu = srtk(UP, UP, assets, liabs, rf, cap_mkt)
+  rtk_ud = srtk(UP, DOWN, assets, liabs, rf, cap_mkt)
+  rtk_du = srtk(DOWN, UP, assets, liabs, rf, cap_mkt)
+  rtk_dd = srtk(DOWN, DOWN, assets, liabs, rf, cap_mkt)
   Γ_diag =
-    (rtk(UP, assets, liabs, rf, cap_mkt) +
-       rtk(DOWN, assets, liabs, rf, cap_mkt) -
+    (srtk(UP, assets, liabs, rf, cap_mkt) +
+       srtk(DOWN, assets, liabs, rf, cap_mkt) -
        2rtk(1,assets, liabs, rf.x0, rf, cap_mkt)) ./ (Δx .* Δx)
   Γ = Array(Float64, length(rf.x0), length(rf.x0))
   for i = 1:length(rf.x0)
@@ -163,7 +159,7 @@ function gamma(assets::Vector{Asset},
   return Γ
 end
 
-
+"calculates the shocked rtk based on shocks Δx"
 Δrtk(Δx::Vector{Float64},
      δ::Vector{Float64},
      Γ::Matrix{Float64}) = (Δx ⋅ δ + 0.5 * Δx' * Γ * Δx)[1]
