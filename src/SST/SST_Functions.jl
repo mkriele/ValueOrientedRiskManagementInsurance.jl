@@ -1,6 +1,6 @@
 using Distributions
 
-export value, delta, gamma, Δrtk, rΔrtk, rtk, srtk, aggrstress,
+export value, delta, gammamatrix, Δrtk, rΔrtk, rtk, srtk, aggrstress,
 UP, DOWN
 
 ## Constructors -------------------------------------------------
@@ -132,7 +132,7 @@ delta(assets::Vector{Asset},
      srtk(DOWN, assets, liabs, rf, cap_mkt)) ./ (2Δ(rf))
 
 "calculates Γ-matrix"
-function gamma(assets::Vector{Asset},
+function gammamatrix(assets::Vector{Asset},
                liabs::Liabilities,
                rf::RiskFactor,
                cap_mkt::SSTCapMkt)
@@ -177,7 +177,7 @@ function rΔrtk(n_scen::Int,
               n_scen)
   r_Δrtk = Array(Float64, n_scen)
   δ = delta(assets, liabs, rf, cap_mkt)[x_index]
-  Γ = gamma(assets, liabs, rf, cap_mkt)[x_index, x_index]
+  Γ = gammamatrix(assets, liabs, rf, cap_mkt)[x_index, x_index]
   for mc in 1:n_scen
     r_Δrtk[mc] = Δrtk(r_Δx[:, mc], δ, Γ)
   end
