@@ -75,15 +75,17 @@ function S2Mkt(param::ProjParam,
                ds2_mkt_all::Dict)
   p = deepcopy(param)
   mkt = S2Mkt(ds2_mkt_all[:mkt])
-  push!(mkt.mds, S2MktInt(p, s2_balance, ds2_mkt_all[:mkt_int]))
-  push!(mkt.mds, S2MktEq(p, s2_balance, ds2_mkt_all[:mkt_eq], eq2type))
+  push!(mkt.mds, S2MktInt(p, s2_balance,
+                 ds2_mkt_all[:mkt_int]))
+  push!(mkt.mds, S2MktEq(p, s2_balance,
+                 ds2_mkt_all[:mkt_eq], eq2type))
   push!(mkt.mds, S2MktProp(p, s2_balance))
   push!(mkt.mds, S2MktSpread(p, s2_balance))
   push!(mkt.mds, S2MktFx(p, s2_balance))
   push!(mkt.mds, S2MktConc(p, s2_balance))
   scen_up = false
   for i = 1:length(mkt.mds)
-    if :scen_up in names(mkt.mds[i])
+    if :scen_up in fieldnames(mkt.mds[i])
       scen_up = mkt.mds[i].scen_up
     end
   end
@@ -101,9 +103,9 @@ function S2Def1(ds2_def_1)
   scr_par = Dict{Symbol, Vector{Float64}}()
   for i = 1:nrow(ds2_def_1[:scr_par])
     merge!(scr_par,
-           [ds2_def_1[:scr_par][i, :range] =>
+           Dict(ds2_def_1[:scr_par][i, :range] =>
             [ds2_def_1[:scr_par][i, :threshold_upper],
-             ds2_def_1[:scr_par][i, :multiplier]]])
+             ds2_def_1[:scr_par][i, :multiplier]]))
   end
   scr = zeros(Float64, 2)
   return S2Def1(tlgd, slgd, u, v, scr_par, scr)
@@ -289,4 +291,3 @@ function  S2(param::ProjParam,
   scr!(s2, p.tax_credit_0)
   return s2
 end
-

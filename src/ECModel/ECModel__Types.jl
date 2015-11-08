@@ -39,13 +39,13 @@ end
 abstract BusinessUnit
 
 type BuInsurance <: BusinessUnit
-  name::String
+  name::AbstractString
   gross::PLInsurance
   net::PLInsurance
 end
 
 type BuInvestments <: BusinessUnit
-  name::String
+  name::AbstractString
   init::Real
   gross::PLInvestments
   net::PLInvestments
@@ -55,5 +55,3 @@ type Total
   gross::PLTotal
   net::PLTotal
 end
-
-

@@ -26,7 +26,7 @@ function PLTotal(n_scen)
   PLTotal(Array(Real, n_scen), 0, 0, 0)
 end
 
-function BuInvestments(name::String,
+function BuInvestments(name::AbstractString,
                        bu_ins::Array{BusinessUnit},
                        cost_ratio::Real,
                        invest_init::Real,
@@ -151,4 +151,3 @@ function project(ins_input::DataFrame,
   end
   return bu, total
 end
-

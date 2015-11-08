@@ -12,7 +12,7 @@ import Distributions.rand
 ## General functions --------------------------------------------
 ## Expected shortfall
 es(x::Vector,α) =
-  mean(sort(x, rev = true)[1:ceil((1 - α) * length(x))])
+  mean(sort(x, rev = true)[1:ceil(Integer, (1 - α) * length(x))])
 
 # Simplfied Swiss Solvency Test----------------------------------
 include("SST/SST__Types.jl")

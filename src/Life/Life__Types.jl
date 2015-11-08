@@ -70,8 +70,8 @@ time.
 """
 abstract Invest             ## investment
 
-dict_ig = Dict{Symbol, Symbol}([:IGStock => :InvestStock,
-                                :IGCash => :InvestCash])
+dict_ig = Dict{Symbol, Symbol}(:IGStock => :InvestStock,
+                               :IGCash => :InvestCash)
 
 "`Invest` object associated with a `Stock` process"
 type InvestStock <: Invest
@@ -385,4 +385,3 @@ type Projection
   tax_credit::Vector{Float64}
   fixed_cost_gc::Vector{Float64}
 end
-

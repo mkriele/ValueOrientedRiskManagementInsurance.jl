@@ -25,7 +25,7 @@ calculates the spot rate `s` rate from the forward rate `f`
   `(1+f[1])(1+f[2])...(1+f[n]) = (1+s[n])^n`
 """
 forw2spot(f::Vector{Float64}) =
-  cumprod(1 .+ f) .^ (1 ./ [1:length(f)]) -1
+  cumprod(1 .+ f) .^ (1 ./ collect(1:length(f))) - 1
 
 """
 calculates the forward rate `f` rate from the spot rate `s`
@@ -121,9 +121,9 @@ end
 ## insurance liabilities  ---------------------------------------
 "calculate the premium of a product"
 function premium(ins_sum, rfr, prob, β, λ)
-  lx_boy = [1,cumprod(prob[:px])[1:end-1]]
+  lx_boy = [1; cumprod(prob[:px])[1:end-1]]
   v_eoy = 1 ./ cumprod(1 .+ rfr)
-  v_boy = [1, v_eoy[1:end-1]]
+  v_boy = [1; v_eoy[1:end-1]]
   num =
     sum(lx_boy .* ins_sum .*
         (v_boy .* λ[:boy] .* λ[:cum_infl] ./ (1 + λ[:infl]) +
@@ -613,11 +613,22 @@ end
 "Recursive step in generic present value calculation"
 pvprev(rfr, cf, pv) = (cf + pv) /  (1 + rfr)
 
-"Generic present value calculation"
+"""
+Generic present value calculation.
+
+Inputs:
+ - `rfr`: vector of length at least T, risk free rate
+   for each year
+ - `cf`: cashflow of length T. Each payment occurs at the end
+         of the corresponding year
+
+Output: vector of length `T` contianing the present value at
+the end of each year. The last component is necessarily zero.
+"""
 function pvvec(rfr::Vector{Float64}, cf)
   T = length(cf)
   val = zeros(Float64, T)
-  for t in [T-1:-1:1]
+  for t in reverse(collect(1:(T-1))) # [T-1:-1:1] #r
     val[t] = pvprev(rfr[t + 1], val[t + 1], cf[t + 1])
   end
   return val

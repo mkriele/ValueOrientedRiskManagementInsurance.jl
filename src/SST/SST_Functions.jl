@@ -195,7 +195,7 @@ function aggrstress(stress::Stress, r_Δrtk_no_stress)
   i = 0
   for scen = 1:stress.n
     if stress.target[scen]
-      n_adj = floor(n_scen * stress.prob[scen])
+      n_adj = floor(Integer, n_scen * stress.prob[scen])
       for j = 1:n_adj
         r_Δrtk[i + j] += min(0, stress.Δrtk[scen])
       end
@@ -204,4 +204,3 @@ function aggrstress(stress::Stress, r_Δrtk_no_stress)
   end
   return r_Δrtk
 end
-

@@ -5,7 +5,7 @@ export Stress, Asset, Liabilities, StockIndex, ZeroBond,
 Stress scenario
 
   - `n::Int`: Number of scenarios
-  - `name::Vector{ASCIIString}`: Name of scenario
+  - `name::Vector{AbstractString}`: Name of scenario
   - `target::Vector{Bool}`: Is the particular scenario included?
   - `prob::Vector{Float64}`: Probability of the scenario
   - `Δx::Array{Float64,2}`: Impact of scenario
@@ -13,7 +13,7 @@ Stress scenario
 """
 type Stress
   n::Int
-  name::Vector{ASCIIString}
+  name::Vector{AbstractString}
   target::Vector{Bool}
   prob::Vector{Float64}
   Δx::Array{Float64,2}

@@ -5,7 +5,7 @@ const PY, CY, NY = 1, 2, 3   ## previous, current, next year
 """
 Line of Business (Non-Life)
 
-  - `name::String`: Name of the line of business
+  - `name::AbstractString`: Name of the line of business
   - `index::Int`: Identifying index of the line of business
   - `prem_gross_w::Vector{Float64}`: Written gross premium
   - `prem_w::Vector{Float64}`: Written premium
@@ -21,7 +21,7 @@ Line of Business (Non-Life)
   - `vol_prem_res_sd::Float64`: Standard deviation prem+res
 """
 type NLLob
-  name::String
+  name::AbstractString
   index::Int
   prem_gross_w::Vector{Float64}
   prem_w::Vector{Float64}
@@ -36,4 +36,3 @@ type NLLob
   vol_res::Float64
   vol_prem_res_sd::Float64
 end
-

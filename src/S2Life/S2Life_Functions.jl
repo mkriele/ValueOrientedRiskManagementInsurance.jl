@@ -62,7 +62,7 @@ function scr!(mdl::S2Module)
   gross =
     (net .+ fdb(mdl, :be) .-
      Float64[fdb(mdl, sm) for sm in shock_keys])
-  if :corr in names(mdl)
+  if :corr in fieldnames(mdl)
     mdl.scr[NET] = sqrt(net ⋅ (mdl.corr * net))
     mdl.scr[GROSS] = sqrt(gross ⋅ (mdl.corr * gross))
   else
@@ -101,7 +101,7 @@ function scr!(mkt_int::S2MktInt)
   i_down = findin(shock_keys, [:spot_down])[1]
 
   mkt_int.scen_up = net[i_up] >= net[i_down]
-  mkt_int.scr[NET] = maximum([0.0, net])
+  mkt_int.scr[NET] = maximum([0.0; net])
   mkt_int.scr[GROSS] =
     max(0.0, mkt_int.scen_up ? gross[i_up] : gross[i_down])
 end
@@ -209,7 +209,7 @@ function select!(p::ProjParam, bio::S2LifeBio)
   invs = InvPort(p.t_0, p.T, p.cap_mkt, p.invs_par...)
   for symb in collect(keys(bio.shock))
     merge!(bio.mp_select,
-           [symb => Array(Bool, length(p.l_ins.mps))])
+           Dict(symb => Array(Bool, length(p.l_ins.mps))))
     for (m, mp) in enumerate(p.l_ins.mps)
       if (symb == :sx_mass_pension) & (!mp.pension_contract)
         bio.mp_select[symb][m] = false
@@ -319,7 +319,7 @@ function costshock!(invs::InvPort,
                     cost::S2LifeCost)
   shock_eoy =
     (1 + cost.shock[:cost]) *
-    (1 + cost.shock_param[:infl]) .^ [1:l_ins.dur]
+    (1 + cost.shock_param[:infl]) .^ collect(1:l_ins.dur)
   for symb in collect(keys(invs.igs))
     invs.igs[symb].cost.rel .*= shock_eoy
     invs.igs[symb].cost.abs .*= shock_eoy
@@ -376,5 +376,3 @@ function scr!(s2::S2, tax_credit_0::Float64)
   s2.invest_mod =  s2.balance[1,:invest]
   s2.scr_ratio = (s2.invest_mod - s2.liabs_mod)/ s2.scr
 end
-
-

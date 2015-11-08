@@ -55,11 +55,12 @@ function InvPort(t_0,
   for ig_symb in collect(keys(allocs))
     ## ig_symb are the symbols corresponding to the
     ## types of investment groups: :IGCash, IGStock
-    merge!(igs, [ig_symb => eval(ig_symb)(cap_mkt,
-                                          mv_0,
-                                          allocs[ig_symb],
-                                          IGCost(costs[ig_symb])
-                                          )])
+    merge!(igs,
+           Dict(ig_symb => eval(ig_symb)(cap_mkt,
+                                         mv_0,
+                                         allocs[ig_symb],
+                                         IGCost(costs[ig_symb])
+                                         )))
   end
   return(InvPort(t_0,                  ## start of projection
                  mv_0,                 ## init. mv pre prem..
@@ -267,4 +268,3 @@ function Projection(tax_rate,
   valcostprov!(cap_mkt.rfr.x, invs, proj)
   return proj
 end
-
