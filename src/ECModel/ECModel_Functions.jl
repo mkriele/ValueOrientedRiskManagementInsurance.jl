@@ -2,9 +2,10 @@ export rand, profit!, evaluate!, project, initialize
 
 ## Constructors  ################################################
 
-## Creation of a Gaussian copula with marginal distributions
-function GaussCopula(margs::Array{ContinuousUnivariateDistribution},
-                     Σ::Array{Real,2})
+"Creation of a Gaussian copula with marginal distributions"
+function GaussCopula(
+  margs::Array{ContinuousUnivariateDistribution},
+  Σ::Array{Real,2})
   if (size(Σ,1) != size(Σ,2)) | (size(Σ,1) != length(margs))
     error("dimensions are different")
   end
@@ -45,7 +46,11 @@ end
 
 ## Interface ####################################################
 
-# n random samples from a Gaussian copula gc
+"""
+`rand(gc::GaussCopula, n::Int)`
+
+`n` random samples from a Gaussian copula `gc`
+"""
 function rand(gc::GaussCopula, n::Int)
   u = zeros(Float64, gc.n, n)
   x = zeros(Float64, gc.n, n)
@@ -57,6 +62,12 @@ function rand(gc::GaussCopula, n::Int)
   return x'
 end
 
+"""
+`profit!(pl::PLInsurance, r_distr::Vector{Float64}, s::Real)`
+
+ Updates `pl.profit`, where `r_distr` is the loss distribution
+ and `s` is the risk free interest rate
+"""
 function profit!(pl::PLInsurance,
                  r_distr::Vector{Float64},
                  s::Real)
@@ -65,6 +76,13 @@ function profit!(pl::PLInsurance,
   return pl
 end
 
+"""
+`profit!(pl::PLInvestments, r_distr::Vector{Float64}, s::Real)`
+
+ Updates `pl.profit`, where `r_distr` is the investment result
+ and `s` is the risk free interest rate. Only the investment
+ return above `s` counts as profit.
+"""
 function profit!(pl::PLInvestments,
                  r_distr::Vector{Float64},
                  s::Real)
@@ -72,6 +90,15 @@ function profit!(pl::PLInvestments,
   return pl
 end
 
+"""
+`profit!(pl::PLTotal, pl_bu::Array{ProfitLoss},
+  cap_init::Real, costs_fixed::Real, s::Real)`
+
+ Updates `pl.profit`, where `cap_init` is the initial capital,
+ `pl_bu` are the profit loss accounts of the business units,
+ `costs_fixed` are the fixed costs, and `s` is the risk free
+ interest rate.
+"""
 function profit!(pl::PLTotal, pl_bu::Array{ProfitLoss},
                  cap_init::Real, costs_fixed::Real, s::Real)
   fill!(pl.profit, 0.0)
@@ -82,6 +109,12 @@ function profit!(pl::PLTotal, pl_bu::Array{ProfitLoss},
   return pl
 end
 
+"""
+`evaluate!(pl::ProfitLoss, α::Real)`
+
+ Calculate expected profit, economic capital (expected shortfall
+   at safety level `α`), and RORAC for `pl`
+"""
 function evaluate!(pl::ProfitLoss, α::Real)
   pl.profit_mean = mean(pl.profit)
   pl.eco_cap = es(-pl.profit, α)
@@ -89,6 +122,12 @@ function evaluate!(pl::ProfitLoss, α::Real)
     pl.eco_cap < eps() ? NaN : pl.profit_mean / pl.eco_cap
 end
 
+"""
+`initialize(insurance_input::DataFrame, invest_input::DataFrame,
+  tau_kendall::Matrix{Real}, n_scen::Int)`
+
+ Set up an insurance company
+"""
 function initialize(insurance_input::DataFrame,
                     invest_input::DataFrame,
                     tau_kendall::Matrix{Real},
@@ -123,6 +162,13 @@ function initialize(insurance_input::DataFrame,
 end
 
 
+"""
+`project(ins_input::DataFrame, inv_input::DataFrame,
+  tau_kendall::Matrix{Real}, n_scen::Int, α::Real, s::Real
+  costs_fixed::Real)`
+
+ Set up an insurance company and project its results
+"""
 function project(ins_input::DataFrame,
                  inv_input::DataFrame,
                  tau_kendall::Matrix{Real},

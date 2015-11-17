@@ -1,7 +1,7 @@
 export  premrestotalsd
 using Distributions
 
-"constructs line of business & calculates statistical parameters"
+"Constructs line of business & calculates statistical parameters"
 function NLLob(lob::DataFrame,
                β_raw_vec,
                rf,
@@ -55,7 +55,11 @@ function NLLob(lob::DataFrame,
                vol_prem_res_sd)
 end
 
-"calculates the standard deviation of the total premium reserve"
+"""
+`premrestotalsd(nllobs::Vector{NLLob}, corr_lob::Matrix{Float64})`
+
+Calculates the standard deviation of the total premium reserve
+"""
 function premrestotalsd(nllobs::Vector{NLLob},
                         corr_lob::Matrix{Float64})
   indices = Array(Int, 0)
@@ -68,4 +72,3 @@ function premrestotalsd(nllobs::Vector{NLLob},
     sqrt(prem_res_sd' * corr_lob[indices, indices] * prem_res_sd)
   return prem_res_total_sd
 end
-

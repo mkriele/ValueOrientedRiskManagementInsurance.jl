@@ -2,11 +2,17 @@ export GROSS, NET
 export S2, S2Mkt, S2MktEq, S2MktInt
 export ProjParam
 
-const GROSS, NET = 1,2
+"Convenience index name"
+const GROSS = 1
+"Convenience index name"
+const NET = 2
 
+"Abstract type for an S2 module"
 abstract S2Module
 
+"Dummy type for those S2 modules that have not been implemented"
 type S2NotImplemented <: S2Module
+  "`Vector{Float64}`: Gross and net SCR"
   scr::Vector{Float64}
 end
 
@@ -14,256 +20,223 @@ function S2NotImplemented(x...)
   return S2NotImplemented(zeros(Float64, 2))
 end
 
+"S2 market property risk module, not yet implemented"
 typealias S2MktProp S2NotImplemented
+"S2 market spread risk module, not yet implemented"
 typealias S2MktSpread S2NotImplemented
+"S2 market currency risk module, not yet implemented"
 typealias S2MktFx S2NotImplemented
+"S2 market concentration risk module, not yet implemented"
 typealias S2MktConc S2NotImplemented
+"S2 default (type 2) risk module, not yet implemented"
 typealias S2Def2 S2NotImplemented
+"S2 life morbidity risk module, not yet implemented"
 typealias S2LifeMorb S2NotImplemented
+"S2 life revision risk module, not yet implemented"
 typealias S2LifeRevision S2NotImplemented
+"S2 health risk module, not yet implemented"
 typealias S2Health S2NotImplemented
+"S2 non-life risk module, not yet implemented"
 typealias S2NonLife S2NotImplemented
 
-"""
-Projection parameters for S2-calculations without
-S2 calibration parameters
-
-  - `t_0::Int`: Year in which projection starts
-  - `T::Int`: Year in which projection ends
-  - `cap_mkt::CapMkt`: Capital market
-  - `invs_par::Vector{Any}`:
-    Parameters for construction of InvPort object with the
-    exception of `t_0::Int`, `T::Int`, `cap_mkt::CapMkt`
-  - `l_ins::LiabIns`:
-    Liability porfolio (without other liabilites)
-  - `l_other::LiabOther`: Other liabilities
-  - `dyn::Dynamic`: Dynamic projection parameters
-  - `tax_rate::Float64`: (constant) tax rate during projection
-  - `tax_credit_0::Float64`: Initial tax credit
-"""
+"Projection parameters for S2-calculations without
+S2 calibration parameters"
 type ProjParam
+  "`Int`: Year in which projection starts"
   t_0::Int
+  "`Int`: Year in which projection ends"
   T::Int
+  "`CapMkt`: Capital market"
   cap_mkt::CapMkt
+  "`Vector{Any}`: Parameters for the construction of the InvPort
+  object with the exception of `t_0::Int`, `T::Int`,
+  `cap_mkt::CapMkt`"
   invs_par::Vector{Any}
+  "`LiabIns`: Liability porfolio (without other liabilites)"
   l_ins::LiabIns
+  "`LiabOther`: Other liabilities"
   l_other::LiabOther
+  "`Dynamic`: Dynamic projection parameters"
   dyn::Dynamic
+  "`Float64`: (constant) tax rate during projection"
   tax_rate::Float64
+  "`Float64`: Initial tax credit"
   tax_credit_0::Float64
 end
 
 ## solvency 2 market risk =======================================
-"""
-Solvency 2 market risk: interest rate risk
-
-  - `shock_object::Symbol`: Name of object type to be shocked
-  - `shock::Dict{Symbol, Any}`: Interest rate shocks
-  - `spot_up_abs_min::Float64`: Minumum upwards shock
-  - `balance::DataFrame`:  Shocked balance sheets
-  - `scr::Vector{Float64}`: Gross and net SCR
-  - `scen_up::Bool`:
-    Marker whether interest was shocked upwards to obtain SCR
-"""
+"Solvency 2 market risk: interest rate risk"
 type S2MktInt <: S2Module
+  "`Symbol`: Name of object type to be shocked"
   shock_object::Symbol
+  "`Dict{Symbol, Any}`: Interest rate shocks"
   shock::Dict{Symbol, Any}
+  "`Float64`: Minumum upwards shock"
   spot_up_abs_min::Float64
+  "`DataFrame`:  Shocked balance sheets"
   balance::DataFrame
+  "`Vector{Float64}`: Gross and net SCR"
   scr::Vector{Float64}
+  "`Bool`: Was interest shocked upwards to obtain SCR?"
   scen_up::Bool
 end
 
-"""
-Solvency 2 market risk: equity risk
-
-  - `shock_object::Symbol`: Name of object type to be shocked
-  - `eq2type::Dict{Symbol, Symbol}`:
-    Equity type for each invested stock index
-  - `shock::Dict{Symbol, Any}`: Equity shocks
-  - `balance::DataFrame`:  Shocked balance sheets
-  - `corr::Matrix{Float64}`: Correlation matrix for equity types
-  - `scr::Vector{Float64}`: Gross and net SCR
-"""
+"Solvency 2 market risk: equity risk"
 type S2MktEq <: S2Module
+  "`Symbol`: Name of object type to be shocked"
   shock_object::Symbol
+  "`Dict{Symbol, Symbol}`: Equity type for each invested stock"
   eq2type::Dict{Symbol, Symbol}
+  "`Dict{Symbol, Any}`: Equity shocks"
   shock::Dict{Symbol,Any}
+  "`DataFrame`:  Shocked balance sheets"
   balance::DataFrame
+  "`Matrix{Float64}`: Correlation matrix for equity types"
   corr::Matrix{Float64}
+  "`Vector{Float64}`: Gross and net SCR"
   scr::Vector{Float64}
 end
 
-"""
-Solvency 2 market risk
-
-  - `mds::Vector{S2Module}`: Sub-modules for market risk
-  - `corr_up::Matrix{Float64}`:
-    Correlation matrix if upwards shock was used in the
-    calculation of the SCR for interest risk
-  - `corr_down::Matrix{Float64}`:
-    Correlation matrix if downwards shock was used in the
-    calculation of the SCR for interest risk
-  - `scr::Vector{Float64}`: Gross and net SCR
-"""
+"Solvency 2 market risk"
 type S2Mkt <: S2Module
+  "`Vector{S2Module}`: Sub-modules for market risk"
   mds::Vector{S2Module}
+  "`Matrix{Float64}`: Correlation matrix if upwards shock was
+  used in the calculation of the SCR for interest risk"
   corr_up::Matrix{Float64}
+  "`Matrix{Float64}`: Correlation matrix if downwards shock was
+  used in the calculation of the SCR for interest risk"
   corr_down::Matrix{Float64}
+  "`Vector{Float64}`: Gross and net SCR"
   scr::Vector{Float64}
 end
 
 ## solvency 2 default risk ======================================
-"""
-Solvency 2 default risk of type 1
-
-  - `tlgd::Vector{Float64}`: Total loss given default per rating
-  - `slgd::Vector{Float64}`:
-    Squared loss given default per rating
-  - `u::Matrix{Float64}`: Matrix u for variance calculation
-  - `v::Vector{Float64}`: Vector v for variance calculation
-  - `scr_par::Dict{Symbol, Vector{Float64}}`:
-    Parameters for SCR calculation depending on whether the
-    normalized standard deviation is low, medium, or high
-  - `scr::Vector{Float64}`: Gross and net SCR
-"""
+"Solvency 2 default risk of type 1"
 type S2Def1 <: S2Module
+  "`Vector{Float64}`: Total loss given default per rating"
   tlgd::Vector{Float64}
+  "`Vector{Float64}`: Squared loss given default per rating"
   slgd::Vector{Float64}
+  "`Matrix{Float64}`: Matrix u for variance calculation"
   u::Matrix{Float64}
+  "`Vector{Float64}`: Vector v for variance calculation"
   v::Vector{Float64}
+  "`Dict{Symbol, Vector{Float64}}`: Parameters for the SCR
+  calculation depending on whether the normalized standard
+  deviation is low, medium, or high"
   scr_par::Dict{Symbol, Vector{Float64}}
+  "`Vector{Float64}`: Gross and net SCR"
   scr::Vector{Float64}
 end
 
-"""
-Solvency 2 default risk
-
-  - `mds::Vector{S2Module}`: Sub-modules for default risk
-  - `corr::Matrix{Float64}`: Correlation matrix for default risk
-  - `scr::Vector{Float64}`: Gross and net SCR
-"""
+"Solvency 2 default risk"
 type S2Def <: S2Module
+  "`Vector{S2Module}`: Sub-modules for default risk"
   mds::Vector{S2Module}
+  "`Matrix{Float64}`: Correlation matrix for default risk"
   corr::Matrix{Float64}
+  "`Vector{Float64}`: Gross and net SCR"
   scr::Vector{Float64}
 end
 
 ## solvency 2 life risk =========================================
-"""
-Solvency 2 life risk: biometric risks: mortality, longevity,
-surrender
-
-  - `shock_object::Symbol`: Name of object type to be shocked
-  - `shock::Dict{Symbol, Any}`: biometric shocks
-  - `shock_param::Dict{Symbol, Float64}`:
-    Additional parameters for calculating shocks, may be empty
-  - `balance::DataFrame`:  Shocked balance sheets
-  - `mp_select::Dict{Symbol, Vector{Bool}}`:
-    Indicator which model points are selected to be shocked
-  - `scr::Vector{Float64}`: Gross and net SCR
-"""
+"Solvency 2 life risk: biometric risks: mortality, longevity,
+surrender"
 type S2LifeBio <: S2Module
+  "`Symbol`: Name of object type to be shocked"
   shock_object::Symbol
+  "`Dict{Symbol, Any}`: biometric shocks"
   shock::Dict{Symbol, Any}
+  "`Dict{Symbol, Float64}`: Additional parameters for calculating
+  shocks, may be empty"
   shock_param::Dict{Symbol, Float64}
+  "`DataFrame`:  Shocked balance sheets"
   balance::DataFrame
+  "`Dict{Symbol, Vector{Bool}}`: Indicator which model points
+  have been selected to be shocked"
   mp_select::Dict{Symbol, Vector{Bool}}
+  "`Vector{Float64}`: Gross and net SCR"
   scr::Vector{Float64}
 end
 
-"""
-Solvency 2 life risk: expense risk
 
-  - `shock_object::Symbol`: Name of object type to be shocked
-  - `shock::Dict{Symbol, Any}`: biometric shocks
-  - `shock_param::Dict{Symbol, Float64}`:
-    Additional parameters for calculating shocks
-  - `balance::DataFrame`:  Shocked balance sheets
-  - `scr::Vector{Float64}`: Gross and net SCR
-"""
+"Solvency 2 life risk: expense risk"
 type S2LifeCost <: S2Module
+  "`Symbol`: Name of object type to be shocked"
   shock_object::Symbol
+  "`Dict{Symbol, Any}`: biometric shocks"
   shock::Dict{Symbol, Any}
+  "`Dict{Symbol, Float64}`: Additional parameters for calculating
+  shocks"
   shock_param::Dict{Symbol, Float64}
+  "`DataFrame`:  Shocked balance sheets"
   balance::DataFrame
+  "`Vector{Float64}`: Gross and net SCR"
   scr::Vector{Float64}
 end
 
-"""
-Solvency 2 life risk
-
-  - `mds::Vector{S2Module}`: Sub-modules for life risk
-  - `corr::Matrix{Float64}`: Correlation matrix for life risk
-  - `scr::Vector{Float64}`: Gross and net SCR
-"""
+"Solvency 2 life risk"
 type S2Life <: S2Module
+  "`Vector{S2Module}`: Sub-modules for life risk"
   mds::Vector{S2Module}
+  "`Matrix{Float64}`: Correlation matrix for life risk"
   corr::Matrix{Float64}
+  "`Vector{Float64}`: Gross and net SCR"
   scr::Vector{Float64}
 end
 
 ## solvency 2 operational risk ==================================
-
-"""
-Solvency 2 operational risk
-
-  - `fac::Dict{Symbol, Float64}`: Factors for SCR calculation
-  - `prem_earned::Float64`: Earned premium (previous year)
-  - `prem_earned_prev::Float64`:
-    Earned premium (year before previous year)
-  - `tp::Float64`:
-    technical provisions (incl. bonus but without unit linked)
-  - `comp_prem::Float64`:
-    Temporary result, SCR component based on technical provisions
-  - `comp_tp::Float64`:
-    Temporary result, SCR component based on earned premiums
-  - `cost_ul::Float64`: Costs for unit linked
-  - `scr::Vector{Float64}`: SCR
-"""
+"Solvency 2 operational risk"
 type S2Op <: S2Module
+  "`Dict{Symbol, Float64}`: Factors for SCR calculation"
   fac::Dict{Symbol, Float64}
+  "`Float64`: Earned premium (previous year)"
   prem_earned::Float64
+  "`Float64`: Earned premium (year before previous year)"
   prem_earned_prev::Float64
+  "`Float64`: Technical provisions (incl. bonus but without
+  unit linked)"
   tp::Float64
+  "`Float64`: Temporary result, SCR component based on technical
+  provisions"
   comp_prem::Float64
+  "`Float64`: Temporary result, SCR component based on earned
+  premiums"
   comp_tp::Float64
+  "`Float64`: Costs for unit linked"
   cost_ul::Float64
+  "`Vector{Float64}`: Gross and net SCR"
   scr::Float64
 end
 
 ## solvency 2 total =============================================
-"""
-Solvency 2 (total)
-
-  - `mds::Vector{S2Module}`:
-    Solvency 2 modules (with the esception of operational risk)
-  - `balance::DataFrame`:  Unshocked best estimate balance sheet
-  - `corr::Matrix{Float64}`:
-    Correlation matrix for calculation of BSCR
-  - `bscr::Vector{Float64}`: Gross and net BSCR
-  - `adj_tp::Float64`:
-    Adjustment for riskmitigating effect from discretionary bonus
-  - `adj_dt::Float64`:
-    Adjustment for riskmitigating effect from deferred taxes
-  - `op::S2Op`: Solvency 2 module for operational risk
-  - `scr::Float64`: SCR
-  - `invest_mod::Float64`:
-    Modified investments for calculation of the SCR-ratio
-  - `liabs_mod::Float64`:
-    Modified liabilities for calculation of the SCR-ratio
-  - `scr_ratio::Float64`: SCR-ratio
-"""
+"Solvency 2 (total)"
 type S2 <: S2Module
+  "`Vector{S2Module}`: Solvency 2 modules witout op-risk "
   mds::Vector{S2Module}
+  "`DataFrame`: Unshocked best estimate balance sheet"
   balance::DataFrame
+  "`Matrix{Float64}`: Correlation matrix for calculation of BSCR"
   corr::Matrix{Float64}
+  "`Vector{Float64}`: Gross and net BSCR"
   bscr::Vector{Float64}
+  "`Float64`: Adjustment for riskmitigating effect from
+  discretionary bonus"
   adj_tp::Float64
+  "`Float64`: Adjustment for riskmitigating effect from deferred
+  taxes"
   adj_dt::Float64
+  "`S2Op`: Solvency 2 module for operational risk"
   op::S2Op
+  "`Float64`: SCR"
   scr::Float64
+  "`Float64`: Modified investments for the calculation of the
+  SCR-ratio"
   invest_mod::Float64
+  "`Float64`: Modified liabilities for the calculation of the
+  SCR-ratio"
   liabs_mod::Float64
+  "`Float64`: SCR-ratio"
   scr_ratio::Float64
 end

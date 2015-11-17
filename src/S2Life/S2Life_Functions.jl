@@ -1,4 +1,8 @@
-"Calculation of the unshocked S2 balance sheet"
+"""
+`s2bal(p::ProjParam)`
+
+Calculation of the unshocked S2 balance sheet
+"""
 function s2bal(p::ProjParam)
   invs = InvPort(p.t_0, p.T, p.cap_mkt, p.invs_par...)
   proj = Projection(p.tax_rate, p.tax_credit_0, p.cap_mkt, invs,
@@ -8,7 +12,11 @@ function s2bal(p::ProjParam)
   return hcat(bal, DataFrame(bof = bof(bal), scen = :be))
 end
 
-"Calculation of the shocked S2 balance sheet for module `md`"
+"""
+`s2bal(p::ProjParam, md::S2Module, shock!::Any, scen::Symbol)`
+
+Calculation of the shocked S2 balance sheet for module `md`
+"""
 function s2bal(p::ProjParam,
                md::S2Module,
                shock!::Any,
@@ -32,7 +40,11 @@ function s2bal(p::ProjParam,
   return hcat(bal, DataFrame(bof = bof(bal), scen = scen))
 end
 
-"Helper function for the calculation of basic own funds"
+"""
+`bof(bal::DataFrame)`
+
+Helper function for the calculation of basic own funds
+"""
 bof(bal::DataFrame) =
   bal[1, :invest][1,1] +
   bal[1, :tax_credit][1,1] -
@@ -40,17 +52,25 @@ bof(bal::DataFrame) =
   bal[1, :cost_prov][1,1] -
   bal[1, :bonus][1,1]
 
-"Basic own funds for module `md` and scenario `scen`"
+"""
+`bof(md::S2Module, scen::Symbol)`
+
+Basic own funds for module `md` and scenario `scen`
+"""
 bof(md::S2Module, scen::Symbol) =
   bof(md.balance[md.balance[:scen] .== scen, :])
 
 """
+`fdb(md::S2Module, scen::Symbol)`
+
 Future discretionary benefits for module `md` and scenario `scen`
 """
 fdb(md::S2Module, scen::Symbol) =
   md.balance[md.balance[:scen] .== scen, :bonus][1,1]
 
 """
+`scr!(mdl::S2Module)`
+
 Scenario based SCR calculation for `mdl::S2Module`
 
 **Changed:** `mdl::S2Module`
@@ -72,7 +92,11 @@ function scr!(mdl::S2Module)
   end
 end
 
-"Aggregation of SCRs of sub-modules"
+"""
+`scr(md::S2Module, corr::Matrix{Float64})`
+
+Aggregation of SCRs of sub-modules
+"""
 function scr(md::S2Module, corr::Matrix{Float64})
   _scr = zeros(Float64, 2)
   net = Float64[md.mds[i].scr[NET] for i = 1:length(md.mds)]
@@ -84,7 +108,9 @@ end
 
 ## S2MktInt -----------------------------------------------------
 """
-SCR for interest rate risk, sub-module `mkt_int::S2MktInt`
+`scr!(mkt_int::S2MktInt)`
+
+SCR for interest rate risk, sub-module `mkt_int`
 
 **Changed:** `mkt_int::S2MktInt`
 """
@@ -106,7 +132,11 @@ function scr!(mkt_int::S2MktInt)
     max(0.0, mkt_int.scen_up ? gross[i_up] : gross[i_down])
 end
 
-"Helper function: shock for the risk free interest rate "
+"""
+`rfrshock(rfr::Vector{Float64}, s2_mkt_int, int_type)`
+
+Helper function: shock for the risk free interest rate
+"""
 function rfrshock(rfr::Vector{Float64}, s2_mkt_int, int_type)
   ## shock the risk free interest rate
   len = min(length(rfr),
@@ -129,6 +159,8 @@ function rfrshock(rfr::Vector{Float64}, s2_mkt_int, int_type)
 end
 
 """
+`mktintshock!(cap_mkt::CapMkt, s2_mkt_int, int_type::Symbol)`
+
 Shock for interest rate market risk
 
 **Changed:** `cap_mkt::CapMkt`
@@ -136,7 +168,6 @@ Shock for interest rate market risk
 function mktintshock!(cap_mkt::CapMkt,
                       s2_mkt_int,
                       int_type::Symbol)
-
   cap_mkt.rfr.x =
     deepcopy(rfrshock(cap_mkt.rfr.x, s2_mkt_int, int_type))
 end
@@ -145,6 +176,8 @@ end
 
 ## S2MktEq ------------------------------------------------------
 """
+`mkteqshock!(invs::InvPort, mkt_eq, eq_type::Symbol)`
+
 Shock for equity market risk
 
 **Changed:** `invs::InvPort`
@@ -158,6 +191,9 @@ function mkteqshock!(invs::InvPort, mkt_eq, eq_type::Symbol)
 end
 
 """
+`mkt_val0_adj!(proj::Projection, invs::InvPort,
+               mkt_eq, eq_type::Symbol)`
+
 Adjust initial market value for S2 balance sheet in order to
 reflect that the initial fall of the market value of equity
 investments is reflected in the shockedsolvency balance sheet
@@ -178,6 +214,8 @@ end
 
 ## S2Def1 -------------------------------------------------------
 """
+`scr!(def::S2Def1)`
+
 SCR for interest rate risk, sub-module `def::S2Def1`
 
 **Changed:** `def::S2Def1`
@@ -197,6 +235,8 @@ end
 
 ## S2LifeBio ----------------------------------------------------
 """
+`select!(p::ProjParam, bio::S2LifeBio)`
+
 Identify those model points that are subject to mortality
 risk. This function does not properly take into account
 second order effects due to the effect of boni.
@@ -229,13 +269,13 @@ function select!(p::ProjParam, bio::S2LifeBio)
 end
 
 """
+`bioshock!(mp::ModelPoint, bio::S2LifeBio, symb::Symbol)`
+
 Helper function: shock for biometric risk
 
 **Changed:** `mp::ModelPoint`
 """
-function bioshock!(mp::ModelPoint,
-                   bio::S2LifeBio,
-                   symb::Symbol)
+function bioshock!(mp::ModelPoint, bio::S2LifeBio, symb::Symbol)
   if symb in [:qx, :px]
     qxpxshock!(mp, bio, symb)
   elseif symb in [:sx_down, :sx_up,
@@ -247,6 +287,8 @@ function bioshock!(mp::ModelPoint,
 end
 
 """
+`bioshock!(l_ins::LiabIns, bio::S2LifeBio, shock_symb::Symbol)`
+
 Shock for biometric risk
 
 **Changed:** `l_ins::LiabIns  (l_ins.mps)`
@@ -262,6 +304,8 @@ function bioshock!(l_ins::LiabIns,
 end
 
 """
+`qxpxshock!(mp::ModelPoint, bio::S2LifeBio, symb::Symbol)`
+
 Helper function: shock for mortality risk
 
 **Changed:** `mp::ModelPoint`
@@ -274,6 +318,8 @@ function qxpxshock!(mp::ModelPoint, bio::S2LifeBio, symb::Symbol)
 end
 
 """
+`sxshock!(mp::ModelPoint, bio::S2LifeBio, symb::Symbol)`
+
 Helper function: shock for surrender risk
 
 **Changed:** `mp::ModelPoint`
@@ -298,6 +344,8 @@ function sxshock!(mp::ModelPoint, bio::S2LifeBio, symb::Symbol)
 end
 
 """
+`catshock!(mp::ModelPoint, bio::S2LifeBio, symb::Symbol)`
+
 Shock for mortality catastrophe risk
 
 **Changed:** `mp::ModelPoint`
@@ -310,6 +358,8 @@ end
 
 ## S2LifeCost ---------------------------------------------------
 """
+`costshock!(invs::InvPort, l_ins::LiabIns, cost::S2LifeCost)`
+
 Shock for expense risk
 
 **Changed:** `invs::InvPort`, `l_ins::LiabIns`
@@ -336,9 +386,11 @@ end
 
 ## S2Op ---------------------------------------------------------
 """
-SCR for interest rate risk, sub-module `op::S2Op`
+`scr!(op::S2Op, bscr)`
 
-**Changed:** `op::S2Op`
+SCR for interest rate risk, sub-module `op`
+
+**Changed:** `op`
 """
 function scr!(op::S2Op, bscr)
   ## SCR for operational risk
@@ -356,9 +408,11 @@ end
 
 ## S2 -----------------------------------------------------------
 """
+`scr!(s2::S2, tax_credit_0::Float64)`
+
 Total SCR
 
-**Changed:** `s2::S2`
+**Changed:** `s2`
 """
 function scr!(s2::S2, tax_credit_0::Float64)
   s2.bscr = scr(s2, s2.corr)

@@ -1,5 +1,9 @@
 ## capital market -----------------------------------------------
-"calculates the yield of stock during year τ"
+"""
+`yield(τ, stock::Stock)`
+
+calculates the yield of `stock` during year `τ`
+"""
 function yield(τ, stock::Stock)
   if τ > 1
     return stock.x[τ] / stock.x[τ - 1] - 1
@@ -10,7 +14,11 @@ function yield(τ, stock::Stock)
   end
 end
 
-"calculates the yield of rfr during year τ"
+"""
+`yield(τ, rfr::RiskFreeRate)`
+
+calculates the yield of `rfr` during year `τ`
+"""
 function yield(τ, rfr::RiskFreeRate)
   if τ >= 1
     return rfr.x[τ]
@@ -20,7 +28,9 @@ function yield(τ, rfr::RiskFreeRate)
 end
 
 """
-calculates the spot rate `s` rate from the forward rate `f`
+`forw2spot(f::Vector{Float64})`
+
+calculates the spot rate `s` rate from the forward rate `f`:
 
   `(1+f[1])(1+f[2])...(1+f[n]) = (1+s[n])^n`
 """
@@ -28,7 +38,9 @@ forw2spot(f::Vector{Float64}) =
   cumprod(1 .+ f) .^ (1 ./ collect(1:length(f))) - 1
 
 """
-calculates the forward rate `f` rate from the spot rate `s`
+`spot2forw(s::Vector{Float64})`
+
+calculates the forward rate `f` rate from the spot rate `s`:
 
   `(1 + s[n-1])^(n-1) * (1+f[n]) = (1+s[n])^n`
 """
@@ -43,26 +55,26 @@ end
 
 ## investments --------------------------------------------------
 """
+`project!(τ::Int, mv_boy::Float64, invest::Invest)`
+
 project `invest::Invest` one year for a given
 initial market value.
 
 **Changed**:  `invest`
 """
-function project!(τ::Int,
-                  mv_boy::Float64,
-                  invest::Invest)            ## changed
+function project!(τ::Int, mv_boy::Float64, invest::Invest)
   invest.mv[τ] = (1 + yield(τ, invest.proc)) * mv_boy
 end
 
 """
+`project!(τ::Int, mv_bop_total::Float64, ig::InvestGroup)`
+
 project `ig::InvestGroup` one year for a given
 initial market value.
 
 **Changed**:  `ig`
 """
-function project!(τ::Int,
-                  mv_bop_total::Float64,  ## total over all igs
-                  ig::InvestGroup)        ## changed
+function project!(τ::Int, mv_bop_total::Float64, ig::InvestGroup)
   mv_bop = ig.alloc.total[τ] * mv_bop_total
   ig.mv[τ] = 0
   for (i, ig_invest) in enumerate(ig.investments)
@@ -75,14 +87,14 @@ function project!(τ::Int,
 end
 
 """
+`alloc!(τ, cap_mkt::CapMkt, invs::InvPort)`
+
 Dynamically re-allocate investments `invs::InvPort` at the
 beginning of year `τ`
 
 **Changed**:  `invs`
 """
-function alloc!(τ,
-                cap_mkt::CapMkt,
-                invs::InvPort)
+function alloc!(τ, cap_mkt::CapMkt, invs::InvPort)
   if τ > 1
     invs.igs[:IGStock].alloc.total[τ] =
       0.5 * (1 - exp( -max(0, dynstateavg(τ, cap_mkt))))
@@ -99,14 +111,14 @@ function alloc!(τ,
 end
 
 """
-project `invs::InvPort`  one year for a given
+`project!(τ::Int, mv_boy::Float64, invs::InvPort)`
+
+Project `invs::InvPort`  one year for a given
 initial market value.
 
 **Changed**:  `invs`
 """
-function project!(τ::Int,
-                  mv_boy::Float64,
-                  invs::InvPort)          ## changed
+function project!(τ::Int, mv_boy::Float64, invs::InvPort)
   invs.mv[τ] = 0.0
   invs.cost[τ] = 0.0
   invs.mv_boy[τ] = mv_boy
@@ -119,7 +131,11 @@ function project!(τ::Int,
 end
 
 ## insurance liabilities  ---------------------------------------
-"calculate the premium of a product"
+"""
+`premium(ins_sum, rfr, prob, β, λ)`
+
+Calculate the premium of a product
+"""
 function premium(ins_sum, rfr, prob, β, λ)
   lx_boy = [1; cumprod(prob[:px])[1:end-1]]
   v_eoy = 1 ./ cumprod(1 .+ rfr)
@@ -138,6 +154,8 @@ function premium(ins_sum, rfr, prob, β, λ)
 end
 
 """
+`tpgrec(τ, tpg, rfr, prob, β, λ)`
+
 One year backward recursion formula for technical provisions
 of guaranteed benefits
 """
@@ -153,6 +171,8 @@ function tpgrec(τ, tpg, rfr, prob, β, λ)
 end
 
 """
+`tpg(τ, rfr, prob, β, λ)`
+
 Technical provisions of guaranteed benefits
 at the end of year `τ`
 """
@@ -170,12 +190,16 @@ function tpg(τ, rfr, prob, β, λ)
 end
 
 """
+`tpg(τ, rfr, mp)`
+
 Best estimate guaranteed technical provisions
 of a model point `mp` at the end of year `τ`
 """
 tpg(τ, rfr, mp) = tpg(τ, rfr, mp.prob, mp.β, mp.λ)
 
 """
+`tpgfixed(τ, rfr, fixed_cost_gc::Vector)`
+
 Technical provisions at the end of year `τ`
 for future fixed (going concern) costs
 """
@@ -191,7 +215,9 @@ end
 
 ## other liabilities --------------------------------------------
 """
-Present value at the end of year `τ` of `debt::Debt`.
+`pv(τ::Int, cap_mkt::CapMkt, debt::Debt)`
+
+Present value of `debt` at the end of year `τ`.
 Any servicing of this debt during year `τ` has occured beforehand
 """
 function pv(τ::Int, cap_mkt::CapMkt, debt::Debt)
@@ -208,9 +234,10 @@ function pv(τ::Int, cap_mkt::CapMkt, debt::Debt)
 end
 
 """
-present value at the end of year `τ` of the portfolio of
-other liabilities `l_other::LiabOther`.
-Any servicing of debt within this portfolio during year `τ`
+`pv(τ::Int, cap_mkt::CapMkt, l_other::LiabOther)`
+
+present value of other liabilities `l_other` at the end of year
+`τ`. Any servicing of debt within this portfolio during year `τ`
 has occured beforehand
 """
 function pv(τ::Int, cap_mkt::CapMkt, l_other::LiabOther)
@@ -221,12 +248,20 @@ function pv(τ::Int, cap_mkt::CapMkt, l_other::LiabOther)
   return p_v
 end
 
-"Coupon payment for `debt::Debt` at the end of year `τ`"
+"""
+`paycoupon(τ::Int, debt::Debt)`
+
+Coupon payment for `debt` at the end of year `τ`
+"""
 paycoupon(τ::Int, debt::Debt) =
   (debt.τ_init <= τ <= debt.τ_mat ? debt.coupon : 0.0)
 
-"Coupon payment for all debts within the portfolio of
-other liabilities `l_other::LiabOther` at the end of year `τ`"
+"""
+`paycoupon(τ::Int, l_other::LiabOther)`
+
+Coupon payment for all debts within the portfolio of
+other liabilities `l_other` at the end of year `τ`
+"""
 function paycoupon(τ::Int, l_other::LiabOther)
   pay = 0.0
   for debt in l_other.subord
@@ -235,14 +270,22 @@ function paycoupon(τ::Int, l_other::LiabOther)
   return pay
 end
 
-"Payment of the principal of `debt::Debt` at the end of year `τ`,
-if the debt matures at this point in time"
+"""
+`payprincipal(τ::Int, debt::Debt)`
+
+Payment of the principal of `debt` at the end of year `τ`,
+if the debt matures at this point in time
+"""
 payprincipal(τ::Int, debt::Debt) =
   (τ == debt.τ_mat ? debt.nominal : 0.0)
 
-"Payment of the total principal of all debts within the
-portfolio of other liabilities `l_other::LiabOther`,
-which mature at the end of year `τ`"
+"""
+`payprincipal(τ::Int, l_other::LiabOther)`
+
+Payment of the total principal of all debts within the
+portfolio of other liabilities `l_other`, which mature at
+the end of year `τ`
+"""
 function payprincipal(τ::Int, l_other::LiabOther)
   pay = 0.0
   for debt in l_other.subord
@@ -252,15 +295,19 @@ function payprincipal(τ::Int, l_other::LiabOther)
 end
 
 """
-Get the nominal of `debt::Debt` at time `τ`, if it has been
-taken out at this point in time
+`getloan(τ::Int, debt::Debt)`
+
+Get the nominal of `debt` at time `τ`, if it has been
+taken out at this point in time, otherwise return 0.0
 """
 getloan(τ::Int, debt::Debt) =
   (τ == debt.τ_init ? debt.nominal : 0.0)
 
 """
+`getloan(τ::Int, l_other::LiabOther)`
+
 Get the total nominal of all debts within the
-portfolio of other liabilities `l_other::LiabOther`,
+portfolio of other liabilities `l_other`,
 which are taken out at the beginning of year `τ`
 """
 function getloan(τ::Int, l_other::LiabOther)
@@ -272,6 +319,8 @@ function getloan(τ::Int, l_other::LiabOther)
 end
 
 """
+`goingconcern(debts::Vector{Debt}, Δgc::Vector{Float64})`
+
 Calculates a vector of debts from an existing vector of debts
 according to the going concern assumption. The total initial debt
 is the same, but the new debt vectors mature earlier so that the
@@ -302,6 +351,8 @@ function goingconcern(debts::Vector{Debt}, Δgc::Vector{Float64})
 end
 
 """
+`goingconcern!(l_other::LiabOther, Δgc::Vector{Float64})`
+
 Transforms a portfolio of other liabilities `l_other::LiabOther`
 according to the going concern assumption. We do not input the
 factors `gc` directly but their year on year differences `Δgc`.
@@ -313,13 +364,19 @@ function goingconcern!(l_other::LiabOther, Δgc::Vector{Float64})
 end
 
 ## dynamics -----------------------------------------------------
-"indicator for the state of the economy at the end of year `τ`"
+"""
+`dynstate(τ, cap_mkt::CapMkt)`
+
+indicator for the state of the economy at the end of year `τ`
+"""
 dynstate(τ, cap_mkt::CapMkt) =
   yield(τ, cap_mkt.stock) / max(yield(τ, cap_mkt.rfr), eps()) - 1
 
 """
+`dynstateavg(τ, cap_mkt::CapMkt)`
+
 Two year average of the indicator for the state of the economy
- at the end of year `τ`.
+at the end of year `τ`.
 """
 dynstateavg(τ, cap_mkt::CapMkt) =
   0.5 * (yield(τ - 1, cap_mkt.stock) /
@@ -328,11 +385,17 @@ dynstateavg(τ, cap_mkt::CapMkt) =
            max(yield(τ, cap_mkt.rfr), eps())) - 1
 
 
-"Helper function for dynamic bonus rate declaration"
+"""
+`bonusrate(yield_eoy, rfr_price, bonus_factor)`
+
+Helper function for dynamic bonus rate declaration
+"""
 bonusrate(yield_eoy, rfr_price, bonus_factor) =
   max(bonus_factor * (yield_eoy - rfr_price), 0.0)
 
 """
+`bonusrate(τ, yield_eoy, mp::ModelPoint, dyn)`
+
 Dynamic bonus rate declaration for a model point at the end
 of year `τ`
 """
@@ -342,11 +405,11 @@ bonusrate(τ, yield_eoy, mp::ModelPoint, dyn) =
             dyn.bonus_factor)
 
 """
-  indicator for bonus rate expectation at the end of
-  year `τ`
+`biquotient(τ, yield_eoy, cap_mkt, invs, mp, dyn)`
+
+Indicator for bonus rate expectation at the end of year `τ`
 """
-function biquotient(τ, yield_eoy, cap_mkt,
-                    invs::InvPort, mp, dyn)
+function biquotient(τ, yield_eoy, cap_mkt, invs, mp, dyn)
   if τ ≤ mp.dur
     ind_bonus =
       yield(τ, cap_mkt.stock) /
@@ -361,9 +424,12 @@ function biquotient(τ, yield_eoy, cap_mkt,
   end
 end
 
-"Dynamic lapse probability factor to adjust the initial estimate"
-function δsx(τ, cap_mkt::CapMkt, invs::InvPort, mp::ModelPoint,
-             dyn)
+"""
+`δsx(τ, cap_mkt, invs, mp, dyn)`
+
+Dynamic lapse probability factor to adjust the initial estimate
+"""
+function δsx(τ, cap_mkt, invs, mp, dyn)
   yield_eoy =
     invs.igs[:IGStock].alloc.total[τ] * yield(τ, cap_mkt.stock) +
     invs.igs[:IGCash].alloc.total[τ] * yield(τ, cap_mkt.rfr)
@@ -383,11 +449,17 @@ function δsx(τ, cap_mkt::CapMkt, invs::InvPort, mp::ModelPoint,
   return δ_SX
 end
 
-"Helper function for the free surplus calculation"
+"""
+`freesurp(dyn, invest_pre, liab)`
+
+Helper function for the free surplus calculation
+"""
 freesurp(dyn, invest_pre, liab) =
  max(0, invest_pre - (1 + dyn.quota_surp) * liab)
 
 """
+`freesurp(τ, proj::Projection, dyn)`
+
 Free surplus for the dynamic dividend declaration
 """
 freesurp(τ, proj::Projection, dyn) =
@@ -401,7 +473,11 @@ freesurp(τ, proj::Projection, dyn) =
                proj.val[τ-1, :tpg] + proj.val[τ-1, :l_other])
   end
 
-"Update dynamic parameters"
+"""
+`update!(τ, proj::Projection, dyn::Dynamic)`
+
+Update dynamic parameters
+"""
 function update!(τ, proj::Projection, dyn::Dynamic)
   if τ == 1
     dyn.free_surp_boy[τ] =
@@ -418,6 +494,9 @@ end
 
 ## cashflow projection  -----------------------------------------
 """
+`val0!(cap_mkt::CapMkt, invs::InvPort, liabs::LiabIns,
+  l_other::LiabOther, proj::Projection)`
+
 Valuation at time `t_0`
 
 **Changed:** `proj::Projection`
@@ -441,6 +520,8 @@ function val0!(cap_mkt::CapMkt,
 end
 
 """
+`projectboy!(τ, proj::Projection, liabs::LiabIns)`
+
 Project one year, update values at the beginning of the year `τ`
 
 **Changed:** `proj::Projection`, `liabs::LiabIns  (liabs.mp)`
@@ -460,6 +541,9 @@ function projectboy!(τ, proj::Projection, liabs::LiabIns)
 end
 
 """
+`projecteoy!(τ, cap_mkt::CapMkt, invs::InvPort, liabs::LiabIns,
+  dyn::Dynamic, proj::Projection)`
+
 Project one year, update values at the end of the year `τ`
 
 **Changed:** `proj::Projection`, `liabs::LiabIns  (liabs.mp)`
@@ -503,6 +587,9 @@ function projecteoy!(τ,
 end
 
 """
+`project!(τ, cap_mkt::CapMkt, invs::InvPort, dyn::Dynamic,
+  proj::Projection)`
+
 Project one year, investment results from the year `τ`
 
 **Changed:** `proj::Projection`, `invs::InvPort`
@@ -521,6 +608,9 @@ function project!(τ,
 end
 
 """
+`bonus!(τ, invs::InvPort, liabs::LiabIns, dyn::Dynamic,
+  proj, surp_pre_profit_tax_bonus)`
+
 Bonus at the end of year `τ`
 
 **Changed:** `proj::Projection`
@@ -544,10 +634,12 @@ function bonus!(τ,
   end
 end
 
-"Market value of assets before payment of dividends"
-function investpredivid(τ,
-                        invs::InvPort,
-                        proj::Projection)
+"""
+`investpredivid(τ, invs::InvPort, proj::Projection)`
+
+Market value of assets before payment of dividends
+"""
+function investpredivid(τ, invs::InvPort, proj::Projection)
   invs.mv_boy[τ] +
     sum(convert(Array,
                 proj.cf[τ,
@@ -556,6 +648,9 @@ function investpredivid(τ,
 end
 
 """
+`project!(τ, cap_mkt::CapMkt, invs::InvPort, liabs::LiabIns,
+  liab_other::LiabOther, dyn::Dynamic, proj::Projection)`
+
 Project one year
 
 **Changed:** `proj::Projection`, `invs::InvPort`, `dyn::Dynamic`
@@ -566,8 +661,7 @@ function project!(τ,
                   liabs::LiabIns,
                   liab_other::LiabOther,
                   dyn::Dynamic,
-                  proj::Projection
-                  )
+                  proj::Projection)
   projectboy!(τ, proj, liabs)
   proj.cf[τ, :new_debt] = -getloan(τ, liab_other)
   project!(τ, cap_mkt, invs, dyn, proj)
@@ -610,20 +704,23 @@ function project!(τ,
     proj.val[τ, :l_other]
 end
 
-"Recursive step in generic present value calculation"
+"""
+`pvprev(rfr, cf, pv) = (cf + pv) /  (1 + rfr)`
+
+Recursive step in generic present value calculation
+"""
 pvprev(rfr, cf, pv) = (cf + pv) /  (1 + rfr)
 
 """
-Generic present value calculation.
+`pvvec(rfr::Vector{Float64}, cf)``
 
-Inputs:
- - `rfr`: vector of length at least T, risk free rate
-   for each year
- - `cf`: cashflow of length T. Each payment occurs at the end
-         of the corresponding year
+Generic present value calculation, where `rfr` denotes the risk
+free rate for each year and `cf`. The length of the vector `rfr`
+may not be smaller than the length of the cashflow.
+Each payment occurs at the end of the corresponding year.
 
-Output: vector of length `T` contianing the present value at
-the end of each year. The last component is necessarily zero.
+Output: A vector of the same length as `cf` contaning the present
+value at the end of each year. The last component is zero.
 """
 function pvvec(rfr::Vector{Float64}, cf)
   T = length(cf)
@@ -635,19 +732,24 @@ function pvvec(rfr::Vector{Float64}, cf)
 end
 
 """
+`valbonus!(rfr::Vector{Float64}, proj::Projection) `
+
 Provisions for future bonus payments (at each time `τ`).
 Needs to be called after the projection is completed
 
 **Changed:** proj::Projection
 """
 function valbonus!(rfr::Vector{Float64},
-                   proj::Projection)        ## changed
+                   proj::Projection)
   proj.val[:bonus] = pvvec(rfr,  -proj.cf[:bonus])
   proj.val_0[:bonus] =
     pvprev(rfr[1], -proj.cf[1, :bonus], proj.val[1, :bonus])
 end
 
 """
+`valcostprov!(rfr::Vector{Float64}, invs::InvPort,
+  proj::Projection)`
+
 Provisions for future costs (at each time `τ`). Absolute costs
 (including absolute investment costs from *all* investments) and
 relative investment costs for provisions are considered.

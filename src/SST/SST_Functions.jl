@@ -1,19 +1,24 @@
 using Distributions
 
-export value, delta, gammamatrix, Δrtk, rΔrtk, rtk, srtk, aggrstress,
-UP, DOWN
+export value, delta, gammamatrix, Δrtk, rΔrtk, rtk, srtk,
+       aggrstress, UP, DOWN
 
 ## Constructors -------------------------------------------------
 function RiskFactor(σ::Vector{Float64},
                     corr::Array{Float64, 2},
                     x0::Vector{Float64},
                     h::Vector{Float64},
-                    add::Vector{Bool}
-                    )
+                    add::Vector{Bool})
   return RiskFactor((σ * σ') .* corr, x0, h, add)
 end
 
 ## Valuation ----------------------------------------------------
+"""
+`value(t::Int, zb::ZeroBond, x::Vector{Float64}, rf::RiskFactor,
+  cap_mkt::SSTCapMkt)`
+
+Calculates the value of a zero bond (after sensitivity `x`)
+"""
 function value(t::Int,
                zb::ZeroBond,
                x::Vector{Float64},
@@ -27,6 +32,12 @@ function value(t::Int,
   return val
 end
 
+"""
+`value(t::Int, si::StockIndex,x::Vector{Float64}, rf::RiskFactor,
+  cap_mkt::SSTCapMkt)`
+
+Calculates the value of a stock (after sensitivity `x`)
+"""
 function value(t::Int,
                si::StockIndex,
                x::Vector{Float64},
@@ -35,6 +46,13 @@ function value(t::Int,
   return x[si.index] * si.nom * (1 + cap_mkt.stock_increase)^t
 end
 
+"""
+`value(t::Int, assts::Vector{Asset}, x::Vector{Float64},
+  rf::RiskFactor, cap_mkt::SSTCapMkt)`
+
+Calculates the value of the asset portfolio
+(after sensitivity `x`)
+"""
 function value(t::Int,
                assts::Vector{Asset},
                x::Vector{Float64},
@@ -47,6 +65,13 @@ function value(t::Int,
   return val
 end
 
+"""
+`value(t::Int, liabs::Liabilities, x::Vector{Float64},
+  rf::RiskFactor, cap_mkt::SSTCapMkt)`
+
+Calculates the value of the liability portfolio
+(after sensitivity `x`)
+"""
 function value(t::Int,
                liabs::Liabilities,
                x::Vector{Float64},
@@ -67,6 +92,12 @@ function value(t::Int,
   return val
 end
 
+"""
+`rtk(t::Int, assets::Vector{Asset}, liabs::Liabilities,
+  x::Vector{Float64}, rf::RiskFactor, cap_mkt::SSTCapMkt)`
+
+Calculates the risk bearing capital (after sensitivity `x`)
+"""
 rtk(t::Int,
     assets::Vector{Asset},
     liabs::Liabilities,
@@ -79,7 +110,12 @@ rtk(t::Int,
 ## capital calculation ------------------------------------------
 const UP, DOWN = 1, -1
 
-"calculates (linear) sensitivities for rtk"
+"""
+`srtk(shift::Int, assets::Vector{Asset}, liabs::Liabilities,
+  rf::RiskFactor, cap_mkt::SSTCapMkt)`
+
+Calculates (linear) sensitivities for rtk
+"""
 function srtk(shift::Int,
              assets::Vector{Asset},
              liabs::Liabilities,
@@ -96,7 +132,12 @@ function srtk(shift::Int,
   return rtk_shift
 end
 
-"calculates quadratic sensitivities for rtk"
+"""
+`srtk(shift_1::Int, shift_2::Int, assets::Vector{Asset},
+  liabs::Liabilities, rf::RiskFactor, cap_mkt::SSTCapMkt)`
+
+Calculates quadratic sensitivities for rtk
+"""
 function srtk(shift_1::Int,
              shift_2::Int,
              assets::Vector{Asset},
@@ -123,7 +164,12 @@ end
   Float64[rf.add[i] ?  rf.h[i] : rf.x0[i] * rf.h[i]
           for i = 1:length(rf.x0)]
 
-"calculates δ-vector"
+"""
+`delta(assets::Vector{Asset}, liabs::Liabilities, rf::RiskFactor,
+  cap_mkt::SSTCapMkt)`
+
+Calculates the δ-vector
+"""
 delta(assets::Vector{Asset},
       liabs::Liabilities,
       rf::RiskFactor,
@@ -131,7 +177,12 @@ delta(assets::Vector{Asset},
   (srtk(UP, assets, liabs, rf, cap_mkt) -
      srtk(DOWN, assets, liabs, rf, cap_mkt)) ./ (2Δ(rf))
 
-"calculates Γ-matrix"
+"""
+`gammamatrix(assets::Vector{Asset}, liabs::Liabilities,
+  rf::RiskFactor, cap_mkt::SSTCapMkt)`
+
+Calculates the Γ-matrix
+"""
 function gammamatrix(assets::Vector{Asset},
                liabs::Liabilities,
                rf::RiskFactor,
@@ -159,7 +210,12 @@ function gammamatrix(assets::Vector{Asset},
   return Γ
 end
 
-"calculates the shocked rtk based on shocks Δx"
+"""
+`Δrtk(Δx::Vector{Float64}, δ::Vector{Float64},
+  Γ::Matrix{Float64})`
+
+Calculates the shocked rtk based on shocks Δx
+"""
 Δrtk(Δx::Vector{Float64},
      δ::Vector{Float64},
      Γ::Matrix{Float64}) = (Δx ⋅ δ + 0.5 * Δx' * Γ * Δx)[1]
