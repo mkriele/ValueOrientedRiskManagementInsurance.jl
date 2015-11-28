@@ -2,11 +2,11 @@ using ValueOrientedRiskManagementInsurance
 using DataFrames
 using Base.Test
 
-include("S2_Life.jl")
+include("S2Life.jl")
 
 VORMI = ValueOrientedRiskManagementInsurance
 
-println("Start S2 Life test")
+println("Start S2Life test")
 
 ins_sum = df_portfolio[1, :ins_sum]
 
@@ -826,6 +826,6 @@ bscrs_net = [s2_mkt.scr[NET], s2_def.scr[NET], s2_life.scr[NET]]
 @test s2.scr_ratio > 1
 
 #################################################################
-println("End S2 Life test")
+println("End S2Life test")
 
 sqrt

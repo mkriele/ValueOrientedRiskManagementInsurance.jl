@@ -1,10 +1,10 @@
 using ValueOrientedRiskManagementInsurance
 using Distributions
 using DataFrames
-include("S2_Life_Input.jl")
+include("S2Life_Input.jl")
 include("Life_Input.jl")
 #################################################################
-println("Start S2_Life.jl")
+println("Start S2Life.jl")
 
 t_0 = 0
 cap_mkt = CapMkt(proc_stock, proc_rfr)
@@ -41,4 +41,4 @@ println("Modified Liabilities : $(round(s2.liabs_mod, 2))")
 println("SCR:                 : $(round(s2.scr, 2))")
 println("SCR-Ratio            : $(round(100 *s2.scr_ratio, 1))%")
 
-println("End S2_Life.jl")
+println("End S2Life.jl")
