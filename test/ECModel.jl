@@ -2,9 +2,6 @@ using ValueOrientedRiskManagementInsurance
 
 using Distributions
 using DataFrames
-using Cairo
-using Gadfly
-using Base.Test
 
 include("ECModel_Input.jl")
 
@@ -419,20 +416,6 @@ rorac_net = Real[bu[i].net.rorac for i = 1:length(bu)]
 x = hcat(profit_gross, ec_gross, ec_net)
 
 
-## Total results
-total.gross.profit_mean
-total.net.profit_mean
-
-total.gross.eco_cap
-
-total.net.eco_cap
-
-total.gross.rorac
-total.net.rorac
-
-bu[1].gross.profit
-
-
 ##  Portfolio Optimizations #####################################
 
 ins_input = deepcopy(insurance_input)
@@ -455,9 +438,10 @@ bu_rp, total_rp =
 
 ## Optimizing Capitalization ====================================
 println("Optimizing Capitalization ... ")
-inv_input_oc, i_oc_opt, invest_init_oc, ec_net_oc, rorac_net_oc, roc_net_oc,
-inv_init_oc_opt, ec_net_oc_opt, profit_net_oc_opt =
-  optcap(ins_input_rp, inv_input, tau_kendall, n_scen, α, s, costs_fixed)
+inv_input_oc, i_oc_opt, invest_init_oc, ec_net_oc, rorac_net_oc,
+roc_net_oc, inv_init_oc_opt, ec_net_oc_opt, profit_net_oc_opt =
+  optcap(ins_input_rp, inv_input, tau_kendall,
+         n_scen, α, s, costs_fixed)
 
 srand(seed)
 bu_oc, total_oc =
