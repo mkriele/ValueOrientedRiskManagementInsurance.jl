@@ -18,7 +18,8 @@ ds2 =
                                0.25  0.25  0.25  1.00  0.00;
                                0.25  0.50  0.00  0.00  1.00],
                      :mdl => [:S2Mkt, :S2Def, :S2Life,
-                              :S2Health, :S2NonLife])
+                              :S2Health, :S2NonLife],
+                     :coc => 0.06)
 
 ## SCR Op =======================================================
 ds2_op = Dict{Symbol, Float64}(:bscr => 0.3,

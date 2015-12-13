@@ -267,7 +267,8 @@ function   S2(ds2_op, s2_op)
   adj_dt = 0.0
   op = S2Op(ds2_op, s2_op)
   scr = 0.0
-  S2(mds, balance, corr, bscr, adj_tp, adj_dt, op, scr, 0, 0, 0)
+  S2(mds, balance, corr, bscr,
+     adj_tp, adj_dt, op, scr, 0, 0, 0, 0, 0)
 end
 
 function  S2(param::ProjParam,
@@ -281,6 +282,7 @@ function  S2(param::ProjParam,
   p = deepcopy(param)
   s2 = S2(ds2_op, s2_op)
   s2.corr = ds2[:corr]
+  s2.coc = ds2[:coc]
   s2.balance = s2bal(p)
   s2.op.tp = s2.balance[1, :tpg] + s2.balance[1, :bonus]
   push!(s2.mds, S2Mkt(p, s2.balance, eq2type, ds2_mkt_all))
@@ -289,5 +291,12 @@ function  S2(param::ProjParam,
   push!(s2.mds, S2Health(p, s2.balance))
   push!(s2.mds, S2NonLife(p, s2.balance))
   scr!(s2, p.tax_credit_0)
+  s2.liabs_mod = s2.balance[1,:tpg] +
+                 s2.balance[1,:bonus] +
+                 s2.balance[1,:cost_prov]
+  s2.invest_mod =  s2.balance[1,:invest]
+  s2.risk_margin = s2riskmargin(p, s2.scr, s2.coc)
+  s2.scr_ratio =
+    (s2.invest_mod - s2.liabs_mod - s2.risk_margin)/ s2.scr
   return s2
 end

@@ -1,3 +1,5 @@
+export forw2spot, spot2forw
+
 ## capital market -----------------------------------------------
 """
 `yield(τ, stock::Stock)`

@@ -38,6 +38,10 @@ println("Initial balance sheet:")
 println(proj.val_0)
 println("Modified Assets      : $(round(s2.invest_mod, 2))")
 println("Modified Liabilities : $(round(s2.liabs_mod, 2))")
+println("Risk Margin          : $(round(s2.risk_margin, 2))")
+println("Available capital    : $(round(s2.invest_mod -
+                                        s2.liabs_mod -
+                                        s2.risk_margin, 2))")
 println("SCR:                 : $(round(s2.scr, 2))")
 println("SCR-Ratio            : $(round(100 *s2.scr_ratio, 1))%")
 

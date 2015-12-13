@@ -821,8 +821,24 @@ bscrs_net = [s2_mkt.scr[NET], s2_def.scr[NET], s2_life.scr[NET]]
                   s2.balance[1,:bonus] +
                   s2.balance[1,:cost_prov])
 @test_approx_eq(s2.invest_mod, s2.balance[1,:invest])
+
+ds2[:coc]
+
+coc = 0.06
+balance = vcat(proj.val_0, proj.val)
+length(balance)
+tpbe =
+  convert(Array,
+          balance[:tpg] + balance[:bonus] + balance[:cost_prov])
+src_future = (tpbe * s2.scr / tpbe[1])[1:T]
+discount = 1 ./ cumprod(1 .+ rfr)
+risk_margin = coc * src_future ⋅ discount
+
+@test_approx_eq(s2.risk_margin, risk_margin)
+
 @test_approx_eq(s2.scr_ratio,
-                (s2.invest_mod - s2.liabs_mod) / s2.scr)
+                (s2.invest_mod - s2.liabs_mod - s2.risk_margin) /
+                s2.scr)
 @test s2.scr_ratio > 1
 
 #################################################################

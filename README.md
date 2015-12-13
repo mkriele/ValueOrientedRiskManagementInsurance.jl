@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/mkriele/ValueOrientedRiskManagementInsurance.jl.svg?branch=master)](https://travis-ci.org/mkriele/ValueOrientedRiskManagementInsurance.jl)
 
-**This package requires Julia 0.4.x. or above**
+**This package requires Julia 0.4.x.**
 
 
 The package provides example calculations for the second edition of the book
@@ -16,9 +16,9 @@ It is also intended to use these examples for future editions of the English  tr
  - *SSTLife*: An extremely simplified example of the SST (Swiss Solvency Test) calculation for life insurance. The Swiss Solvency Test is the Swiss regulatory capital requirement.  The resulting monetary requirement is referred to as the "target capital" `ZK`<sup>1</sup>.
  - *S2Life*: A simplified example of the S2 (Solvency 2) calculation for non-life insurance. Solvency 2 is the new regulatory capital requirement in the European Union. The resulting monetary requirement is referred to as the "Solvency capital requirement" `SCR`.
  - *S2NonLife*: A simplified example of the S2 calculation for life insurance
- - *ECModel*: An extremely simplified example of an internal economic capital model for non-life insurance. In the book, this model is used to illustrate concepts in value based management.
+ - *ECModel*: An extremely simplified example of an internal economic capital model for non-life insurance. This model is used to illustrate some techniques used in value based management.
 
-Note that we have simplified and (in part changed) the regulatory requirements for SST and Solvency 2. Also note that the implementation of Solvency 2 may be slightly different in different EU countries. For definitive information about SST or Solvency 2, please consult the original literature and any guidance issued by the supervisory authorities in the jurisdiction of interest.
+Note that we have simplified and (in part changed for our exposition) the regulatory requirements for SST and Solvency 2. Also note that the implementation of Solvency 2 may be slightly different in different EU countries. For definitive information about SST or Solvency 2, please consult the original literature and any guidance issued by the supervisory authorities in the jurisdiction of interest.
 
 ## Files in the Folder "src" and its Subfolders
 
@@ -51,4 +51,4 @@ The folder "test" contains the files files *x_Input.jl*, *x.jl*, and *x_test.jl*
 
 <sup>1</sup> The abbreviation `ZK` comes from the original German term "Zielkapital". "Target capital" is the literal English translation.
 
-<sup>2</sup> The abbreviation `RTK` comes from the  original German term "Risikotragendes Kapital". Observe that `RBC` is usually understood to mean risk based capital which is different from risk bearing capital.  
+<sup>2</sup> The abbreviation `RTK` comes from the  original German term "Risikotragendes Kapital". Observe that `RBC` is usually understood to mean "risk based capital" which has a different meaning than "risk bearing capital".  

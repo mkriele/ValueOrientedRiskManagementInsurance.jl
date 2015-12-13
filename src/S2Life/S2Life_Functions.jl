@@ -1,3 +1,16 @@
+function s2riskmargin(p::ProjParam, scr, coc)
+  invs = InvPort(p.t_0, p.T, p.cap_mkt, p.invs_par...)
+  proj = Projection(p.tax_rate, p.tax_credit_0, p.cap_mkt, invs,
+                    p.l_ins, p.l_other, p.dyn)
+  bal_vec  = vcat(proj.val_0, proj.val)
+  discount = 1 ./ cumprod(1 .+ p.cap_mkt.rfr.x)
+  tp = convert(Array, bal_vec[:tpg] +
+                      bal_vec[:bonus] +
+                      bal_vec[:cost_prov])[1:(p.T-p.t_0)]
+  src_future = (tp * scr / tp[1])
+  coc * src_future ⋅ discount
+end
+
 """
 `s2bal(p::ProjParam)`
 
@@ -423,10 +436,4 @@ function scr!(s2::S2, tax_credit_0::Float64)
     -max(tax_credit_0 - (s2.bscr[GROSS] + s2.op.scr + s2.adj_tp),
          0)
   s2.scr = s2.bscr[GROSS] + s2.adj_tp + s2.adj_dt + s2.op.scr
-  s2.liabs_mod =
-    s2.balance[1,:tpg] +
-    s2.balance[1,:bonus] +
-    s2.balance[1,:cost_prov]
-  s2.invest_mod =  s2.balance[1,:invest]
-  s2.scr_ratio = (s2.invest_mod - s2.liabs_mod)/ s2.scr
 end

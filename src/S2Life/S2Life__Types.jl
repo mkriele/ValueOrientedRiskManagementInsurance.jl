@@ -237,6 +237,10 @@ type S2 <: S2Module
   "`Float64`: Modified liabilities for the calculation of the
   SCR-ratio"
   liabs_mod::Float64
+  "`Float64`: Cost of capital factor (spread over risk free)"
+  coc::Float64
+  "`Float64`: Risk margin (part of S2 technical provisions)"
+  risk_margin::Float64
   "`Float64`: SCR-ratio"
   scr_ratio::Float64
 end
