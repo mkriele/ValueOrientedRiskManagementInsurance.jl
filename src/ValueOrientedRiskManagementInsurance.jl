@@ -7,6 +7,9 @@ of the book
 >  2nd edition, Springer-Verlag, Berlin Heidelberg,  2016
 > (to be published)
 
+**These files are part of branch de_2ed
+(relating to the 2nd edition of the German version of the book)**
+
 It is also intended to use these examples for future editions of
 the English  translation of this book,
 _Value-Oriented Risk Management of Insurance Companies_.

@@ -4,6 +4,9 @@
 
 **This package requires Julia 0.4.x.**
 
+***These files are part of branch `de_2ed`
+(relating to the 2nd edition of the German version of the book)***
+
 
 The package provides example calculations for the second edition of the book
 
