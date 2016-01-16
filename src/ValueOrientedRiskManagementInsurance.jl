@@ -13,7 +13,8 @@ of the book
 It is also intended to use these examples for future editions of
 the English  translation of this book,
 _Value-Oriented Risk Management of Insurance Companies_.
-(The examples in the current English edition are written in R).
+(The examples in both the first German and the first English
+ edition are written in R).
 
 The module consists of 4 distinct parts:
 
