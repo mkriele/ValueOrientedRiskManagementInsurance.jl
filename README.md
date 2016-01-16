@@ -7,7 +7,7 @@
 ***These files are part of branch `de_2ed`
 (relating to the 2nd edition of the German version of the book)***
 
-|Book editio   | Julia version | Branch  | Commit    |
+|Book edition   | Julia version | Branch  | Commit    |
 |--------------|---------------|---------|-----------|
 | 2nd (German) | 0.4.x         |  de_2ed |cff52f9    |
 
