@@ -4,12 +4,23 @@
 
 **This package requires Julia 0.4.x.**
 
-
-The package provides example calculations for the second edition of the book
+The package provides example calculations for the of the book
 
 > Kriele M. and Wolf, J. _Wertorientiertes Risikomanagement von  Versicherungsunternehmen_, 2nd edition, Springer-Verlag, Berlin Heidelberg,  2016 (to be published)
 
-It is also intended to use these examples for future editions of the English  translation of this book,  _Value-Oriented Risk Management of Insurance Companies_.  (The examples in the current English edition are written in R).
+
+It is also intended to use these examples for future editions of the English  translation of this book,  _Value-Oriented Risk Management of Insurance Companies_.  (The examples in both the first German edition and the first English edition are written in R).
+
+## The correct checkout for each book edition and Julia version
+
+As Julia is in flux and since there will be changes in later editions of this book, the table below shows which branch and commit is most appropriate for each edition and each version of Julia:
+
+|Book edition    | Julia version   | Branch    | Commit      |
+|:--------------:|:---------------:|:---------:|:-----------:|
+| 2nd (German)   | 0.4.x           |  de_2ed   |cff52f9      |
+
+
+## Structure of the package
 
  The package consists of 4 distinct parts:
 
