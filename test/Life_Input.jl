@@ -14,26 +14,26 @@ df_sub_debt = DataFrame(
 
 sx_fac = 0.9
 β = DataFrame( ## profile insurance contract
-              qx = rep(1.0, T),         ## death ben rel ins sum
-              sx = cumsum(rep(sx_fac, T)), ## lapse ben rel prem
-              px = [rep(0.0, T-1); 1],  ## life ben  rel ins sum
-              prem = rep(1.0, T))       ## premium payments
+              qx = fill(1.0, T),         ## death ben rel ins sum
+              sx = cumsum(fill(sx_fac, T)), ## lapse ben rel prem
+              px = [fill(0.0, T-1); 1],  ## life ben  rel ins sum
+              prem = fill(1.0, T))       ## premium payments
 
 prob_price = DataFrame( ## biometric probabilities
                        qx = 0.001 .+ collect(0:(T-1)) * 0.0001,
-                       sx = rep(0.1, T)
+                       sx = fill(0.1, T)
                        )
-rfr_price = rep(0.005, T)        ## discount rate
+rfr_price = fill(0.005, T)        ## discount rate
 λ_price =  DataFrame(  ## cost profile
-                     boy = [0.05; rep(0.0, T-1)], ## costs boy
-                     eoy = rep(0.06, T),   ## costs end of year
-                     infl = rep(0.01, T))  ## cost inflation
+                     boy = [0.05; fill(0.0, T-1)], ## costs boy
+                     eoy = fill(0.06, T),   ## costs end of year
+                     infl = fill(0.01, T))  ## cost inflation
 
 ## best estimate assumptions ------------------------------------
 
 ## capital market -----------------------------------------------
 proc_stock = Stock(1.0,                    ## initial value x_0
-                   cumprod(rep(1.07, T)),  ## values x
+                   cumprod(fill(1.07, T)),  ## values x
                    0.05)                  ## yield during t_0
 
 proc_rfr = RiskFreeRate(rfr[1:T],     ## values x
@@ -57,16 +57,16 @@ df_stock = DataFrame(
 λ_invest = Dict{Symbol, DataFrame}()
 merge!(λ_invest,
        Dict{Symbol, DataFrame}(
-         :IGCash => DataFrame(rel = rep(0.005, T),
-                              abs = rep(0.5, T),
+         :IGCash => DataFrame(rel = fill(0.005, T),
+                              abs = fill(0.5, T),
                               infl_rel = zeros(Float64, T),
                               infl_abs =
-                                rep(general_cost_infl, T)),
-         :IGStock => DataFrame(rel = rep(0.01, T),
-                               abs = rep(2.0, T),
+                                fill(general_cost_infl, T)),
+         :IGStock => DataFrame(rel = fill(0.01, T),
+                               abs = fill(2.0, T),
                                infl_rel = zeros(Float64, T),
                                infl_abs =
-                                 rep(general_cost_infl, T))))
+                                 fill(general_cost_infl, T))))
 
 
 
@@ -107,8 +107,8 @@ prob_be =  DataFrame(qx = prob_price[:qx] .- 0.0001,
 
 ## cost profile
 λ_be = DataFrame(
-  boy = [0.05; rep(0.0, T-1)], ## costs boy
-  eoy = rep(0.02, T))          ## costs end of year
+  boy = [0.05; fill(0.0, T-1)], ## costs boy
+  eoy = fill(0.02, T))          ## costs end of year
 
 ## cost inflation
 ## we define a be cost inflation vector for each portfolio tranche,
