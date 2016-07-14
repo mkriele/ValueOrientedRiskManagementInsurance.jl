@@ -38,12 +38,12 @@ function getdf(bu, total)
     Profit = sort(total.net.profit)))
   append!(df, DataFrame(
     BU = convert(Vector{AbstractString},
-                 rep("Risk capital (total)", 4)),
+                 fill("Risk capital (total)", 4)),
     GrossNet = AbstractString["Gross", "Gross", "Net", "Net"],
     CumProb = real([0., 1., 0., 1.]),
     Profit = convert(Vector{Real},
-                     [rep(-total.gross.eco_cap, 2);
-                      rep(-total.net.eco_cap,2)])))
+                     [fill(-total.gross.eco_cap, 2);
+                      fill(-total.net.eco_cap,2)])))
   return df
 end
 
@@ -336,18 +336,29 @@ function optre(ins_input::DataFrame,
   i_opt, profit_net_opt, ec_net_opt, rorac_net_opt =
     0, 0.0, 0.0, 0.0
 
-  for b in 1:nrow(ins)
-    random[b,:] = rand(unif, n_points)
-  end
   prem_gross = sum(ins_input[:, :premium])
-  for i = 1:n_points
-    srand(seed)
-    prem_temp = random[:,i] ⋅ ins_input[:, :premium]
-    for b = 1:nrow(ins)
-      ceded[b, i] =
-        avg_ceded * random[b, i] * prem_gross / prem_temp
-      ins[b, :re_ceded] = ceded[b, i]
+  for i in 1:n_points
+    rand_vector_admissable = false
+    while !rand_vector_admissable
+      random[:,i] = rand(unif, nrow(ins))
+      prem_temp = random[:,i] ⋅ ins_input[:, :premium]
+      for b in 1:nrow(ins)
+        ceded[b, i] =
+          avg_ceded * random[b, i] * prem_gross / prem_temp
+      end
+      # We cannot cede more than 100%
+      rand_vector_admissable =
+        all(ceded[:,i] .<= ones(nrow(ins)))
     end
+  end
+  for i in 1:n_points
+    srand(seed)
+    # for b = 1:nrow(ins)
+    #   ceded[b, i] =
+    #     avg_ceded * random[b, i] * prem_gross / prem_temp
+    #   ins[b, :re_ceded] = ceded[b, i]
+    # end
+    ins[:, :re_ceded] = ceded[:, i]
     bu, total =
       project(ins, inv_input, tau_kendall,
               n_scen, α, s, cost_fixed)
@@ -361,9 +372,7 @@ function optre(ins_input::DataFrame,
       rorac_net_opt = rorac_net[i]
     end
   end
-  for b = 1:nrow(ins)
-    ins[b, :re_ceded] = ceded[b, i_opt]
-  end
+  ins[:, :re_ceded] = ceded[:, i_opt]
   return ins, ceded, profit_net, ec_net, rorac_net,
   profit_net_opt, ec_net_opt, rorac_net_opt
 end
