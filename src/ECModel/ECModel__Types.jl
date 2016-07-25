@@ -67,6 +67,8 @@ abstract BusinessUnit
 
 "Business unit: Line of business"
 type BuInsurance <: BusinessUnit
+  "`AbstractString`:  id of business unit"
+  id::Symbol
   "`AbstractString`:  Name of business unit"
   name::AbstractString
   "`PLInsurance`: profit loss account for lob
@@ -79,6 +81,8 @@ end
 
 "Business unit: Investments"
 type BuInvestments <: BusinessUnit
+  "`AbstractString`:  id of business unit"
+  id::Symbol
   "`AbstractString`:  Name of business unit"
   name::AbstractString
   "`Real`:  Initial capital"

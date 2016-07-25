@@ -9,49 +9,41 @@ println("Start ECModel ...")
 #################################################################
 "Create DataFrame from information on business units and total"
 function getdf(bu, total)
-  df =  DataFrame(BU = Array(AbstractString, 0),
-                  GrossNet = Array(AbstractString, 0),
+  df =  DataFrame(BU = Array(Symbol, 0),
+                  GrossNet = Array(Symbol, 0),
                   CumProb = Array(Float64, 0),
                   Profit = Array(Real, 0))
 
   for i = 1:length(bu)
     append!(df, DataFrame(
-      BU = fill!(Array(AbstractString, n_scen), bu[i].name),
-      GrossNet = fill!(Array(AbstractString, n_scen), "Gross"),
+      BU = fill!(Array(Symbol, n_scen), bu[i].id),
+      GrossNet = fill!(Array(Symbol, n_scen), :gross),
       CumProb = real(collect(1:n_scen)) /  n_scen,
       Profit = sort(bu[i].gross.profit)))
     append!(df, DataFrame(
-      BU = fill!(Array(AbstractString, n_scen), bu[i].name),
-      GrossNet = fill!(Array(AbstractString, n_scen), "Net"),
+      BU = fill!(Array(Symbol, n_scen), bu[i].id),
+      GrossNet = fill!(Array(Symbol, n_scen), :net),
       CumProb = real(collect(1:n_scen)) /  n_scen,
       Profit = sort(bu[i].net.profit)))
   end
   append!(df, DataFrame(
-    BU = fill!(Array(AbstractString, n_scen), "Total"),
-    GrossNet = fill!(Array(AbstractString, n_scen), "Gross"),
+    BU = fill(:total, n_scen),
+    GrossNet = fill(:gross, n_scen),
     CumProb = real(collect(1:n_scen)) /  n_scen,
     Profit = sort(total.gross.profit)))
   append!(df, DataFrame(
-    BU = fill!(Array(AbstractString, n_scen), "Total"),
-    GrossNet = fill!(Array(AbstractString, n_scen), "Net"),
+    BU = fill(:total, n_scen),
+    GrossNet = fill(:net, n_scen),
     CumProb = real(collect(1:n_scen)) /  n_scen,
     Profit = sort(total.net.profit)))
   append!(df, DataFrame(
-    BU = convert(Vector{AbstractString},
-                 fill("Risk capital (total)", 4)),
-    GrossNet = AbstractString["Gross", "Gross", "Net", "Net"],
+    BU = fill(:risk_cap_total, 4),
+    GrossNet = [:gross, :gross, :net, :net],
     CumProb = real([0., 1., 0., 1.]),
     Profit = convert(Vector{Real},
                      [fill(-total.gross.eco_cap, 2);
                       fill(-total.net.eco_cap,2)])))
   return df
-end
-
-function translate!(df::DataFrame, d::Dict)
-  for i = 1:nrow(df)
-    df[i, :BU] = d[df[i, :BU] ]
-    df[i, :GrossNet] = d[df[i, :GrossNet]]
-  end
 end
 
 "Construct efficient frontier"

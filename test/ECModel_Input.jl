@@ -6,6 +6,7 @@ seed = 2              # random seed for repeatable calculations
 
 insurance_input =
   DataFrame(
+  id =          [:fire, :liab, :theft],
   name =        ["Fire", "Liability", "Theft"],
   premium =     [600.,  300.,  100.],
   loss_ratio =  [0.75,  0.75,  0.75],
@@ -18,6 +19,7 @@ insurance_input[:ctr] = collect(1:nrow(insurance_input))
 
 invest_input =
   DataFrame(
+  id =    [:invest],
   name = ["Investment"],
   init = [1400.],
   cost_ratio = [0.005],
