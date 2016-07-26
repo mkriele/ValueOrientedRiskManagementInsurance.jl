@@ -2,23 +2,24 @@
 
 [![Build Status](https://travis-ci.org/mkriele/ValueOrientedRiskManagementInsurance.jl.svg?branch=master)](https://travis-ci.org/mkriele/ValueOrientedRiskManagementInsurance.jl)
 
-**This package requires Julia 0.4.x.**
+**This package requires at least Julia 0.4.x.**
 
 The package provides example calculations for the of the book
 
-> Kriele M. and Wolf, J. [_Wertorientiertes Risikomanagement von  Versicherungsunternehmen_](http://www.springer.com/de/book/9783662502563), 2nd edition, Springer-Verlag, Berlin Heidelberg,  2016 ()
+> Kriele M. and Wolf, J. [_Wertorientiertes Risikomanagement von  Versicherungsunternehmen_](http://www.springer.com/de/book/9783662502563), 2nd edition, Springer-Verlag, Berlin Heidelberg,  2016
 
 
 It is also intended to use these examples for future editions of the English  translation of this book,  _Value-Oriented Risk Management of Insurance Companies_.  (The examples in both the first German edition and the first English edition are written in R).
 
-## The correct checkout for each book edition and Julia version
+## The correct checkout for each book edition and each supported Julia version
 
 As Julia is in flux and since there will be changes in later editions of this book, the table below shows which branch and commit is most appropriate for each edition and each version of Julia:
 
-|Book edition    | Julia version   | Branch    |
-|:--------------:|:---------------:|:---------:|
-| 2nd (German)   | 0.4.x           |  de_2ed   |
-| 2nd (German)   | 0.5-            |  de_2ed   |
+|Book edition     | Julia version   | Branch    |
+|:---------------:|:---------------:|:---------:|
+| 2nd (German)    | 0.4.x           |  de_2ed   |
+| 2nd (German)    | 0.5-            |  de_2ed   |
+| future editions | latest          |  master   |
 
 
 ## Structure of the package
