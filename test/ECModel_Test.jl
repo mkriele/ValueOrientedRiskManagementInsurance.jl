@@ -20,6 +20,6 @@ println("Start ECModel test")
 @test_approx_eq(round(rorac_net_oc[i_oc_opt], 4), 0.2690)
 ## product mix optimization, chosen quote f
 @test_approx_eq(round(avg_ceded_ofr, 4), 0.4928)
-@test_approx_eq(round(rorac_net_or_opt, 4), 0.3382)
+@test_approx_eq(round(rorac_net_or_opt, 4), 0.3376)
 
 println("End ECModel test")

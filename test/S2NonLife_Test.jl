@@ -18,4 +18,4 @@ println("Start S2NonLife test")
 @test_approx_eq(round(scr_cat, 2), 247.05)
 @test_approx_eq(round(scr_nl, 2), 362.76)
 
-println("Start S2NonLife test")
+println("End S2NonLife test")

@@ -27,7 +27,8 @@ function PLTotal(n_scen)
   PLTotal(Array(Real, n_scen), 0, 0, 0)
 end
 
-function BuInvestments(name::AbstractString,
+function BuInvestments(id::Symbol,
+                       name::AbstractString,
                        bu_ins::Array{BusinessUnit},
                        cost_ratio::Real,
                        invest_init::Real,
@@ -35,13 +36,13 @@ function BuInvestments(name::AbstractString,
   gross = PLInvestments(invest_init, 0,
                         zeros(Real, n_scen), 0, 0, 0)
   net = deepcopy(gross)
-  for bu_ins in bu_ins
-    gross.invest_bop += bu_ins.gross.premium
-    net.invest_bop += bu_ins.net.premium
+  for ins in bu_ins
+    gross.invest_bop += ins.gross.premium
+    net.invest_bop += ins.net.premium
   end
   gross.costs = cost_ratio * gross.invest_bop
   net.costs = cost_ratio * net.invest_bop
-  return BuInvestments(name, invest_init, gross, net)
+  return BuInvestments(id, name, invest_init, gross, net)
 end
 
 ## Interface ####################################################
@@ -138,7 +139,8 @@ function initialize(insurance_input::DataFrame,
 
   for i in insurance_input[:ctr]
     bu[i] =
-      BuInsurance(insurance_input[i, :name],
+      BuInsurance(insurance_input[i, :id],
+                  insurance_input[i, :name],
                   PLInsurance(insurance_input, i, n_scen, false),
                   PLInsurance(insurance_input, i, n_scen, true))
     lognorm_sd = sqrt(log(1 + insurance_input[i,:var_coeff]^2 ))
@@ -149,7 +151,8 @@ function initialize(insurance_input::DataFrame,
   end
 
   bu[invest_input[1, :ctr]] =
-    BuInvestments(invest_input[1, :name],
+    BuInvestments(invest_input[1, :id],
+                  invest_input[1, :name],
                   bu[1:(n_bu - 1)],
                   invest_input[1, :cost_ratio],
                   invest_input[1, :init],

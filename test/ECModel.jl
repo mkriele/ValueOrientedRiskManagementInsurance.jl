@@ -9,49 +9,41 @@ println("Start ECModel ...")
 #################################################################
 "Create DataFrame from information on business units and total"
 function getdf(bu, total)
-  df =  DataFrame(BU = Array(AbstractString, 0),
-                  GrossNet = Array(AbstractString, 0),
+  df =  DataFrame(BU = Array(Symbol, 0),
+                  GrossNet = Array(Symbol, 0),
                   CumProb = Array(Float64, 0),
                   Profit = Array(Real, 0))
 
   for i = 1:length(bu)
     append!(df, DataFrame(
-      BU = fill!(Array(AbstractString, n_scen), bu[i].name),
-      GrossNet = fill!(Array(AbstractString, n_scen), "Gross"),
+      BU = fill!(Array(Symbol, n_scen), bu[i].id),
+      GrossNet = fill!(Array(Symbol, n_scen), :gross),
       CumProb = real(collect(1:n_scen)) /  n_scen,
       Profit = sort(bu[i].gross.profit)))
     append!(df, DataFrame(
-      BU = fill!(Array(AbstractString, n_scen), bu[i].name),
-      GrossNet = fill!(Array(AbstractString, n_scen), "Net"),
+      BU = fill!(Array(Symbol, n_scen), bu[i].id),
+      GrossNet = fill!(Array(Symbol, n_scen), :net),
       CumProb = real(collect(1:n_scen)) /  n_scen,
       Profit = sort(bu[i].net.profit)))
   end
   append!(df, DataFrame(
-    BU = fill!(Array(AbstractString, n_scen), "Total"),
-    GrossNet = fill!(Array(AbstractString, n_scen), "Gross"),
+    BU = fill(:total, n_scen),
+    GrossNet = fill(:gross, n_scen),
     CumProb = real(collect(1:n_scen)) /  n_scen,
     Profit = sort(total.gross.profit)))
   append!(df, DataFrame(
-    BU = fill!(Array(AbstractString, n_scen), "Total"),
-    GrossNet = fill!(Array(AbstractString, n_scen), "Net"),
+    BU = fill(:total, n_scen),
+    GrossNet = fill(:net, n_scen),
     CumProb = real(collect(1:n_scen)) /  n_scen,
     Profit = sort(total.net.profit)))
   append!(df, DataFrame(
-    BU = convert(Vector{AbstractString},
-                 rep("Risk capital (total)", 4)),
-    GrossNet = AbstractString["Gross", "Gross", "Net", "Net"],
+    BU = fill(:risk_cap_total, 4),
+    GrossNet = [:gross, :gross, :net, :net],
     CumProb = real([0., 1., 0., 1.]),
     Profit = convert(Vector{Real},
-                     [rep(-total.gross.eco_cap, 2);
-                      rep(-total.net.eco_cap,2)])))
+                     [fill(-total.gross.eco_cap, 2);
+                      fill(-total.net.eco_cap,2)])))
   return df
-end
-
-function translate!(df::DataFrame, d::Dict)
-  for i = 1:nrow(df)
-    df[i, :BU] = d[df[i, :BU] ]
-    df[i, :GrossNet] = d[df[i, :GrossNet]]
-  end
 end
 
 "Construct efficient frontier"
@@ -336,18 +328,29 @@ function optre(ins_input::DataFrame,
   i_opt, profit_net_opt, ec_net_opt, rorac_net_opt =
     0, 0.0, 0.0, 0.0
 
-  for b in 1:nrow(ins)
-    random[b,:] = rand(unif, n_points)
-  end
   prem_gross = sum(ins_input[:, :premium])
-  for i = 1:n_points
-    srand(seed)
-    prem_temp = random[:,i] ⋅ ins_input[:, :premium]
-    for b = 1:nrow(ins)
-      ceded[b, i] =
-        avg_ceded * random[b, i] * prem_gross / prem_temp
-      ins[b, :re_ceded] = ceded[b, i]
+  for i in 1:n_points
+    rand_vector_admissable = false
+    while !rand_vector_admissable
+      random[:,i] = rand(unif, nrow(ins))
+      prem_temp = random[:,i] ⋅ ins_input[:, :premium]
+      for b in 1:nrow(ins)
+        ceded[b, i] =
+          avg_ceded * random[b, i] * prem_gross / prem_temp
+      end
+      # We cannot cede more than 100%
+      rand_vector_admissable =
+        all(ceded[:,i] .<= ones(nrow(ins)))
     end
+  end
+  for i in 1:n_points
+    srand(seed)
+    # for b = 1:nrow(ins)
+    #   ceded[b, i] =
+    #     avg_ceded * random[b, i] * prem_gross / prem_temp
+    #   ins[b, :re_ceded] = ceded[b, i]
+    # end
+    ins[:, :re_ceded] = ceded[:, i]
     bu, total =
       project(ins, inv_input, tau_kendall,
               n_scen, α, s, cost_fixed)
@@ -361,9 +364,7 @@ function optre(ins_input::DataFrame,
       rorac_net_opt = rorac_net[i]
     end
   end
-  for b = 1:nrow(ins)
-    ins[b, :re_ceded] = ceded[b, i_opt]
-  end
+  ins[:, :re_ceded] = ceded[:, i_opt]
   return ins, ceded, profit_net, ec_net, rorac_net,
   profit_net_opt, ec_net_opt, rorac_net_opt
 end

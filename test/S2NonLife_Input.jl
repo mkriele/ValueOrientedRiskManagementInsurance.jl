@@ -2,10 +2,10 @@
 
 α = 0.995  ## confidence level
 
-lob_names = ["motor_liab", "motor_other", "mat",
-             "fire",       "liability",   "credit",
-             "legal",      "assist",      "misc",
-             "re_np_cas",  "re_np_mat",   "re_np_prop"]
+lob_names = [:motor_liab, :motor_other, :mat,
+             :fire, :liability, :credit,
+             :legal, :assist, :misc,
+             :re_np_cas, :re_np_mat, :re_np_prop]
 lob_ids = 1:12
 
 
@@ -52,12 +52,12 @@ corr_prem_res = [1.0 0.5; 0.5 1.0]
 df_cat_liability =
   DataFrame(index = collect(1:6),
             description =
-              ["l_malpractice",
-               "l_employer",
-               "l_director_officer",
-               "l_personal",
-               "l_other",
-               "l_nprob_re"],
+              [:l_malpractice,
+               :l_employer,
+               :l_director_officer,
+               :l_personal,
+               :l_other,
+               :l_nprob_re],
             f_liab = [1.0, 1.6, 1.6, 0.0, 1.0, 2.1])
 ## correlations for types of catastrophe liability risk
 corr_liab =
@@ -76,9 +76,7 @@ corr_scr = [1.00 0.00 0.25;
 ## company data #################################################
 
 ## theft -> misc (we classify theft insurance as miscellaneous)
-#select_lob_names = ["fire", "liability", "misc"]
-select_lob_names =
-  [convert(AbstractString, l) for l in ["fire", "liability", "misc"]]
+select_lob_names = [:fire, :liability, :misc]
 
 df_lobs = DataFrame(
   name = select_lob_names,              # lobs of X-AG

@@ -5,7 +5,7 @@ const PY, CY, NY = 1, 2, 3   ## previous, current, next year
 "Line of Business (Non-Life)"
 type NLLob
   "`AbstractString`: Name of the line of business"
-  name::AbstractString
+  name::Symbol
   "`Int`: Identifying index of the line of business"
   index::Int
   "`Vector{Float64}`: Written gross premium"

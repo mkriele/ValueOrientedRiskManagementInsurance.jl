@@ -12,7 +12,7 @@ lobs = Array(NLLob, 0)
 
 for lob in select_lob_names
   push!(lobs, NLLob(df_lobs[df_lobs[:name] .== lob, :],
-                    convert(Array, β_raw[symbol(lob)]),
+                    convert(Array, β_raw[lob]),
                     rf,
                     corr_prem_res, df_lobs_prem_risk))
 end
@@ -38,7 +38,7 @@ prem_liab_vec = Array(Float64, nrow(df_cat_liability))
 scr_cat_liab_vec = Array(Float64, nrow(df_cat_liability))
 cat_liab_grp = Array(Int, 0)
 for lob in lobs
-  if lob.name == "liability"
+  if lob.name == :liability
     prem_liab_vec = lob.prem_gross_cy * cat_liability_mix
     scr_cat_liab_vec =
       convert(Array,

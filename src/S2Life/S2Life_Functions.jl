@@ -198,7 +198,7 @@ Shock for equity market risk
 function mkteqshock!(invs::InvPort, mkt_eq, eq_type::Symbol)
   for invest in invs.igs[:IGStock].investments
     if mkt_eq.eq2type[invest.name] == eq_type
-      invest.proc.x .*= (1 + mkt_eq.shock[eq_type])
+      invest.proc.x *= (1 + mkt_eq.shock[eq_type])
     end
   end
 end
@@ -388,9 +388,9 @@ function costshock!(invs::InvPort,
     invs.igs[symb].cost.abs .*= shock_eoy
   end
   for mp in l_ins.mps
-    mp.λ[:, :boy] .*= (1 + cost.shock[:cost])
-    mp.λ[:, :eoy] .*= (1 + cost.shock[:cost])
-    mp.λ[:, :infl] .+= cost.shock_param[:infl]
+    mp.λ[:, :boy] *= (1 + cost.shock[:cost])
+    mp.λ[:, :eoy] *= (1 + cost.shock[:cost])
+    mp.λ[:, :infl] += cost.shock_param[:infl]
     mp.λ[:, :cum_infl] =
       mp.λ[1, :cum_infl] / (1 + mp.λ[1, :infl]) *
       cumprod(1 .+ mp.λ[:, :infl])
