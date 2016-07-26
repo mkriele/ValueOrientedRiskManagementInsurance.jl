@@ -6,7 +6,7 @@
 
 The package provides example calculations for the of the book
 
-> Kriele M. and Wolf, J. _Wertorientiertes Risikomanagement von  Versicherungsunternehmen_, 2nd edition, Springer-Verlag, Berlin Heidelberg,  2016 (to be published)
+> Kriele M. and Wolf, J. [_Wertorientiertes Risikomanagement von  Versicherungsunternehmen_](http://www.springer.com/de/book/9783662502563), 2nd edition, Springer-Verlag, Berlin Heidelberg,  2016 ()
 
 
 It is also intended to use these examples for future editions of the English  translation of this book,  _Value-Oriented Risk Management of Insurance Companies_.  (The examples in both the first German edition and the first English edition are written in R).
@@ -15,9 +15,10 @@ It is also intended to use these examples for future editions of the English  tr
 
 As Julia is in flux and since there will be changes in later editions of this book, the table below shows which branch and commit is most appropriate for each edition and each version of Julia:
 
-|Book edition    | Julia version   | Branch    | Commit      |
-|:--------------:|:---------------:|:---------:|:-----------:|
-| 2nd (German)   | 0.4.x           |  de_2ed   |cff52f9      |
+|Book edition    | Julia version   | Branch    |
+|:--------------:|:---------------:|:---------:|
+| 2nd (German)   | 0.4.x           |  de_2ed   |
+| 2nd (German)   | 0.5-            |  de_2ed   |
 
 
 ## Structure of the package
@@ -56,10 +57,10 @@ The internal economic capital model is a highly simplified Monte Carlo model of 
 
 ## Files in the Folder "test"
 
-The folder "test" contains the files files *x_Input.jl*, *x.jl*, and *x_test.jl* for each of the four parts *x* ∈ {*SSTLife*, *S2Life*, *S2NonLife*, *ECModel*}. The files *x_Input.jl* and *x.jl* replicate the calculation in the book and the files *x_test.jl* are used for automatic testing.  In addition, the file *Life_Input.jl* contains the description of the example insurer, which is used  in the S2 life calculation.  *runtests.jl* controls the automated tests.
+The folder "test" contains the files files *x_Input.jl*, *x.jl*, and *x_Test.jl* for each of the four parts *x* ∈ {*SSTLife*, *S2Life*, *S2NonLife*, *ECModel*}. The files *x_Input.jl* and *x.jl* replicate the calculation in the book and the files *x_Test.jl* are used for automatic testing.  In addition, the file *Life_Input.jl* contains the input data for the example insurer, which is used  in the S2 life calculation.  *runtests.jl* controls the automated tests.
 
 ## Footnotes
 
-<sup>1</sup> The abbreviation `ZK` comes from the original German term "Zielkapital". "Target capital" is the literal English translation.
+<sup>1</sup> The abbreviation `ZK` refers to the original German term "Zielkapital". "Target capital" is the literal English translation.
 
-<sup>2</sup> The abbreviation `RTK` comes from the  original German term "Risikotragendes Kapital". Observe that `RBC` is usually understood to mean "risk based capital" which has a different meaning than "risk bearing capital".  
+<sup>2</sup> The abbreviation `RTK` refers to the  original German term "Risikotragendes Kapital" ("risk bearing capital"). Observe that `RBC` is usually understood to mean "risk based capital" which has a different meaning than "risk bearing capital".  
