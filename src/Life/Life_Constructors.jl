@@ -1,6 +1,3 @@
-## capital market -----------------------------------------------
-CapMkt(proc_stock, proc_rfr) =
-  CapMkt(deepcopy(proc_stock), deepcopy(proc_rfr))
 
 ## assets -------------------------------------------------------
 function IGCost(df_cost)
@@ -98,18 +95,18 @@ function ModelPoint(n, t_0, t_start,
   for name in names(product.β)
     β[name] = n * ins_sum * product.β[s_future, name]
   end
-  β[:prem] .*= product.prem_norm
-  β[:sx] .*= product.prem_norm
+  β[:prem] *= product.prem_norm
+  β[:sx] *= product.prem_norm
 
   λ = deepcopy(λ_be)[s_future, :]
-  λ[:boy] .*= n * ins_sum
-  λ[:eoy] .*= n * ins_sum
+  λ[:boy] *= n * ins_sum
+  λ[:eoy] *= n * ins_sum
   ## be cost inflation input relates to t_0 not s_0:
   λ[:infl] = deepcopy(cost_infl)
   λ[:cum_infl] = cumprod(1 .+ λ[:infl])
   λ_price = deepcopy(product.λ)[s_future, :]
-  λ_price[:boy] .*= n * ins_sum
-  λ_price[:eoy] .*= n * ins_sum
+  λ_price[:boy] *= n * ins_sum
+  λ_price[:eoy] *= n * ins_sum
   λ_price[:cum_infl] = cumprod(1 .+ product.λ[:infl])[s_future]
   rfr_price_0 = product.rfr[s_0 == 0 ? 1 : s_0]
   rfr_price = product.rfr[s_future]
@@ -134,7 +131,8 @@ function ModelPoint(n, t_0, t_start,
                     pension_contract)
 end
 
-function LiabIns(t_0, prob_be, λ_be, cost_infl, product, df_port)
+function LiabIns(t_0::Int, prob_be, λ_be,
+                 cost_infl, product, df_port)
   n = nrow(df_port)
   mps = Array(ModelPoint, 0)
   dur = 0
@@ -159,7 +157,7 @@ function LiabIns(t_0, prob_be, λ_be, cost_infl, product, df_port)
       vcat(1, cumprod(mp.prob[1:(mp.dur-1), :px]))
     gc +=  mp.n * mp.gc
   end
-  gc ./= gc[1]
+  gc /= gc[1]
   Δgc = diff(vcat(gc, 0))
   return LiabIns(n, t_0, dur, mps, gc, Δgc)
 end
@@ -194,7 +192,7 @@ function LiabOther(t_0, df_debts::DataFrame)
 end
 
 ## dynamics -----------------------------------------------------
-function Dynamic(dur, bonus_factor, quota_surp)
+function Dynamic(dur, bonus_factor, quota_surp::Float64)
   Dynamic(bonus_factor,
           quota_surp,
           zeros(Float64, dur))

@@ -10,7 +10,7 @@ println("Start SSTLife.jl")
 srand(seed) ## fix random seed for repeatable results
 
 ## Setting up capital market, investments, liabilities ----------
-cap_mkt = SSTCapMkt(spot, stock_increase)
+cap_mkt = SSTCapMkt(deepcopy(spot), deepcopy(stock_increase))
 
 assets = Array(Asset,0)
 for row = 1:nrow(invest)
