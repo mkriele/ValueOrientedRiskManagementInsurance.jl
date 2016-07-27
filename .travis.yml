@@ -1,12 +1,13 @@
-language: cpp
-compiler:
-  - clang
+language: julia
+julia:
+  - 0.4
+  - nightly
 notifications:
   email: false
+<<<<<<< HEAD
 env:
   matrix:
     - JULIAVERSION="juliareleases"
-    - JULIAVERSION="julianightlies"
 before_install:
   - sudo add-apt-repository ppa:staticfloat/julia-deps -y
   - sudo add-apt-repository ppa:staticfloat/${JULIAVERSION} -y
@@ -15,3 +16,8 @@ before_install:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
 script:
   - julia -e 'Pkg.init(); Pkg.clone(pwd()); Pkg.test("ValueOrientedRiskManagementInsurance")'
+=======
+#script: # the default script does the following
+#  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
+#  - julia -e 'Pkg.init(); Pkg.clone(pwd()); Pkg.test("ValueOrientedRiskManagementInsurance")'
+>>>>>>> origin/master
