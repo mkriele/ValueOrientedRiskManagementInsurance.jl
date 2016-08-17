@@ -70,6 +70,9 @@ include("S2Life/S2Life__Types.jl")
 include("S2Life/S2Life_Constructors.jl")
 include("S2Life/S2Life_Functions.jl")
 
+# Chain Ladder Utilities ----------------------------------------
+include("ChainLadder/ChainLadderMack.jl")
+
 # Simplified Solvency 2 Non-Life --------------------------------
 include("S2NonLife/S2NonLife__Types.jl")
 include("S2NonLife/S2NonLife_Functions.jl")

@@ -3,7 +3,6 @@ using DataFrames
 using Base.Test
 
 include("S2Life.jl")
-
 VORMI = ValueOrientedRiskManagementInsurance
 
 println("Start S2Life test")

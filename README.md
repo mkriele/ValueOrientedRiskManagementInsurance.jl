@@ -15,11 +15,13 @@ It is also intended to use these examples for future editions of the English  tr
 
 As Julia is in flux and since there will be changes in later editions of this book, the table below shows which branch and commit is most appropriate for each edition and each version of Julia:
 
-|Book edition     | Julia version   | Branch    |
-|:---------------:|:---------------:|:---------:|
-| 2nd (German)    | 0.4.x           |  de_2ed   |
-| 2nd (German)    | 0.5-            |  de_2ed   |
-| future editions | latest          |  master   |
+|Book edition     | Julia version   | Branch    | Errata                |
+|:---------------:|:---------------:|:---------:|:---------------------:|
+| 2nd (German)    | 0.4.x           |  de_2ed   | Korrekturen.md        |
+| 2nd (German)    | 0.5-            |  de_2ed   | Korrekturen.md        |
+| future editions | latest          |  master   | -                     |
+
+**Errata** contains a list of corrections for errors in the print version.  We list all errors we are aware of. 
 
 
 ## Structure of the package
