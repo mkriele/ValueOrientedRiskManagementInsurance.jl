@@ -1,6 +1,6 @@
 
 # Wertorientiertes Risikomanagement für Versicherungsunternehmen
-## 2. deutschen Auflage  (2016)
+## 2.  Auflage  (2016)
 
 ### Korrekturen
 

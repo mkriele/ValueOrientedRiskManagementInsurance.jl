@@ -21,7 +21,7 @@ As Julia is in flux and since there will be changes in later editions of this bo
 | 2nd (German)    | 0.5-            |  de_2ed   | Korrekturen.md        |
 | future editions | latest          |  master   | -                     |
 
-**Errata** contains a list of corrections for errors in the print version.  We list all errors we are aware of. 
+**Errata** contains a list of corrections for errors in the print version.  We list all errors we are aware of. To display the text simply click on the corresponding file name in the list of linked documents above.
 
 
 ## Structure of the package
