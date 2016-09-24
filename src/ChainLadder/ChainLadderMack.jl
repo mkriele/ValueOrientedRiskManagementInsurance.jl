@@ -5,6 +5,8 @@ export Mack, claims2cum, cum2claims, cum2futureclaims
 A reserve triangle with chain ladder information
 """
 type Mack
+  "Length of history"
+  I::Int
   "Cummulative claims (upper triangle)"
   cum::Matrix{Real}
   "Time vector of development factors"
@@ -76,7 +78,7 @@ function Mack(triang::Array{Real,2}; cum::Bool = false)
     tmp += mse[i]
     mse_total += tmp
   end
-  return Mack(C, f, futclaims, R, sum(R), mse, mse_total)
+  return Mack(I, C, f, futclaims, R, sum(R), mse, mse_total)
 end
 
 """
