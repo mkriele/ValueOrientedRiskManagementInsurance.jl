@@ -1,6 +1,6 @@
 using DataFrames
 
-export Mack, claims2cum, cum2claims, cum2futureclaims
+export Mack, claims2cum, cum2claims, cum2futureclaims, replacena!
 """
 A reserve triangle with chain ladder information
 """
@@ -26,13 +26,13 @@ type Mack
 end
 
 
-function Mack(df_triang::DataFrame; cum::Bool = false)
-Mack(convert(DataArray{Real, 2}, df_triang); cum = cum)
-end
-
-function Mack(da_triang::DataArray{Real, 2}; cum::Bool = false)
-  Mack(convert(Array{Real,2}, da_triang, 0); cum = cum)
-end
+# function Mack(df_triang::DataFrame; cum::Bool = false)
+# Mack(convert(DataArray{Real, 2}, df_triang); cum = cum)
+# end
+#
+# function Mack(da_triang::DataArray{Real, 2}; cum::Bool = false)
+#   Mack(convert(Array{Real,2}, da_triang, 0); cum = cum)
+# end
 
 function Mack(triang::Array{Real,2}; cum::Bool = false)
   if cum
@@ -82,9 +82,48 @@ function Mack(triang::Array{Real,2}; cum::Bool = false)
 end
 
 """
+replacena!(df::DataFrame, replacement::Any)
+
+Replaces all 'NA'-values with 'replacement'
+"""
+function replacena!(df::DataFrame, replacement::Any)
+  nrows, ncols = size(df)
+  for j = 1:ncols; for i = 1:nrows
+    if isna(df[i,j]); df[i,j] = replacement; end
+    end
+  end
+end
+
+"""
+upperleft(quadrat_mat::Array{Real,2})
+
+Sets all values in the strict lower right triangle to 0.
+"""
+function upperleft{T<:Real}(quadrat_mat::Array{T,2})
+  c = deepcopy(quadrat_mat)
+  n = size(c,1)
+  if n ≠ size(c,2)
+    error("known: Matrix is not quadratic")
+  end
+  for j = 1:n; for i = 1:n
+    if i > n-j+1; c[i,j] = 0 end
+  end; end
+  c
+end
+
+"""
+lowerright(quadrat_mat::Array{Real,2})
+
+Sets all values in the upperleft triangle (incl. diagonal) to 0.
+"""
+function lowerright{T<:Real}(quadrat_mat::Array{T,2})
+  quadrat_mat - upperleft(quadrat_mat)
+end
+
+"""
     claims2cum(c::Array{Real,2})
 
-    Convert a quadratic upper triangular reserve matrix to
+    Convert a quadratic upper left triangular reserve matrix to
     the correponding cumulative triangular reserve matrix.
     The (strictly) lower triangular part is set to 0
 """
@@ -93,10 +132,10 @@ function claims2cum(c::Array{Real,2})
     error("claims2cum: Matrix is not quadratic")
   end
   cum = zeros(Real,size(c))
-  for i in 1:size(c, 1)
-    cum[i,1:size(c, 1)-i+1] = cumsum(c[i,1:size(c, 1)-i+1], 2)
-  end
-  cum
+  #for i in 1:size(c, 1)
+    #cum[i,1:size(c, 1)-i+1] = cumsum(c[i,1:size(c, 1)-i+1], 2)
+  #end
+  upperleft(cumsum(c, 2))
 end
 
 """

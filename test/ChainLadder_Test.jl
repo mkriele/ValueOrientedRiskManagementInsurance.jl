@@ -3,12 +3,16 @@ using DataFrames
 using Base.Test
 
 ### TESTS
+curr_dir = dirname(@__FILE__())
+
 println("start test ChainLadder_Test.jl...")
 # We use the example from Mack's 1993-paper
 # Cumulated claim amounts
+
 cum_triangle =
-  convert(Array{Real,2},
-          readtable("test/ChainLadderMack_Input.csv", header = false))
+  readtable(curr_dir * "/ChainLadderMack_Input.csv", header = false)
+replacena!(cum_triangle, 0.0)
+cum_triangle =  convert(Array{Real,2}, cum_triangle)
 
 triangle =cum2claims(cum_triangle)
 @test_approx_eq(cum_triangle, claims2cum(triangle))
