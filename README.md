@@ -21,7 +21,7 @@ As Julia is in flux and since there will be changes in later editions of this bo
 |Book edition    | Julia version   | Branch    |
 |:--------------:|:---------------:|:---------:|
 | 2nd (German)   | 0.4.x           |  de_2ed   |
-| 2nd (German)   | 0.5-            |  de_2ed   |
+| 2nd (German)   | 0.5.x           |  de_2ed   |
 
 
 ## Structure of the package
