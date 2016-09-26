@@ -2,7 +2,8 @@
 
 [![Build Status](https://travis-ci.org/mkriele/ValueOrientedRiskManagementInsurance.jl.svg?branch=master)](https://travis-ci.org/mkriele/ValueOrientedRiskManagementInsurance.jl)
 
-**This package requires at least Julia 0.4.x.**
+**The master branch of this package requires Julia 0.5.x.**  
+(See branch de_2ed for Julia 0.4.x and above)
 
 The package provides example calculations for the of the book
 
@@ -19,7 +20,7 @@ As Julia is in flux and since there will be changes in later editions of this bo
 |:---------------:|:---------------:|:---------:|:---------------------:|
 | 2nd (German)    | 0.4.x           |  de_2ed   | Korrekturen.md        |
 | 2nd (German)    | 0.5.x           |  de_2ed   | Korrekturen.md        |
-| future editions | latest          |  master   | -                     |
+| future editions | 0.5.x           |  master   | -                     |
 
 **Errata** contains a list of corrections for errors in the print version.  We list all errors we are aware of. To display the text simply click on the corresponding file name in the list of linked documents above.
 
