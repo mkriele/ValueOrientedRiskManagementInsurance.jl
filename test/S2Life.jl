@@ -9,7 +9,7 @@ println("Start S2Life.jl")
 t_0 = 0
 cap_mkt = CapMkt(deepcopy(proc_stock), deepcopy(proc_rfr))
 
-invs_par = Array(Any, 0)
+invs_par = Array{Any}(0)
 push!(invs_par, mv_total_0, allocs, λ_invest)
 invs = InvPort(t_0, T, cap_mkt, invs_par...)
 product = Product(rfr_price, prob_price, β, λ_price)

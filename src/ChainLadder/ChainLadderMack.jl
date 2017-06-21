@@ -16,7 +16,7 @@ type Mack
   "Vector of reseves"
   res::Vector{Real}
   """
-  Total reserves: ``\mathit{tot\_res} =\sum_{i=1}^I \mathit{res}_i``
+  Total reserves: ``\\mathit{tot\\_res} =\\sum_{i=1}^I \\mathit{res}_i``
   """
   tot_res::Real
   "Vector of mean square errors"

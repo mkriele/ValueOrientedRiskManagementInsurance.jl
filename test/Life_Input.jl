@@ -113,7 +113,7 @@ prob_be =  DataFrame(qx = prob_price[:qx] .- 0.0001,
 ## cost inflation
 ## we define a be cost inflation vector for each portfolio tranche,
 ## starting with year t_0 + 1
-cost_infl_be = Array(Vector{Float64}, nrow(df_portfolio))
+cost_infl_be = Array{Vector{Float64}}(nrow(df_portfolio))
 for d = 1:nrow(df_portfolio)
   cost_infl_be[d] =
     fill(general_cost_infl, T + df_portfolio[d, :t_start])

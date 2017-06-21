@@ -123,7 +123,7 @@ function srtk(shift::Int,
              cap_mkt::SSTCapMkt)
   x = deepcopy(rf.x0)
   n = length(x)
-  rtk_shift = Array(Float64, n)
+  rtk_shift = Array{Float64}(n)
   for i = 1:n
     x[i] += shift * rf.h[i]
     rtk_shift[i] = rtk(1, assets, liabs, x, rf, cap_mkt)
@@ -146,7 +146,7 @@ function srtk(shift_1::Int,
              cap_mkt::SSTCapMkt)
   x = deepcopy(rf.x0)
   n = length(x)
-  rtk_shift_shift = Array(Float64, n, n)
+  rtk_shift_shift = Array{Float64}(n, n)
   for i = 1:n
     for k = 1:n
       x[i] += shift_1 * rf.h[i]
@@ -196,7 +196,7 @@ function gammamatrix(assets::Vector{Asset},
     (srtk(UP, assets, liabs, rf, cap_mkt) +
        srtk(DOWN, assets, liabs, rf, cap_mkt) -
        2rtk(1,assets, liabs, rf.x0, rf, cap_mkt)) ./ (Δx .* Δx)
-  Γ = Array(Float64, length(rf.x0), length(rf.x0))
+  Γ = Array{Float64}(length(rf.x0), length(rf.x0))
   for i = 1:length(rf.x0)
     for k = 1:(i-1)
       Γ[i,k] = (rtk_uu[i,k] -
@@ -231,7 +231,7 @@ function rΔrtk(n_scen::Int,
   r_Δx = rand(MvNormal(zeros(Float64, length(x_index)),
                        rf.Σ[x_index, x_index]),
               n_scen)
-  r_Δrtk = Array(Float64, n_scen)
+  r_Δrtk = Array{Float64}(n_scen)
   δ = delta(assets, liabs, rf, cap_mkt)[x_index]
   Γ = gammamatrix(assets, liabs, rf, cap_mkt)[x_index, x_index]
   for mc in 1:n_scen

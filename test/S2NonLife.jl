@@ -8,7 +8,7 @@ include("S2NonLife_Input.jl")
 #################################################################
 println("Start S2NonLife.jl")
 
-lobs = Array(NLLob, 0)
+lobs = Array{NLLob}(0)
 
 for lob in select_lob_names
   push!(lobs, NLLob(df_lobs[df_lobs[:name] .== lob, :],
@@ -34,9 +34,9 @@ scr_cat_nat = 0.0   ## no natural catastrophe risk in portfolio
 scr_cat_fire = sum(cat_fire_is) ## no risk management mechanisms
 
 ## liability
-prem_liab_vec = Array(Float64, nrow(df_cat_liability))
-scr_cat_liab_vec = Array(Float64, nrow(df_cat_liability))
-cat_liab_grp = Array(Int, 0)
+prem_liab_vec = Array{Float64}(nrow(df_cat_liability))
+scr_cat_liab_vec = Array{Float64}(nrow(df_cat_liability))
+cat_liab_grp = Array{Int}(0)
 for lob in lobs
   if lob.name == :liability
     prem_liab_vec = lob.prem_gross_cy * cat_liability_mix

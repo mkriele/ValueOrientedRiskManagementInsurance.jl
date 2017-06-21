@@ -331,7 +331,7 @@ We do not input the factors `gc` directly but their year on year
 differences `Δgc`.
 """
 function goingconcern(debts::Vector{Debt}, Δgc::Vector{Float64})
-  new_debt_vec = Array(Debt, 0)
+  new_debt_vec = Array{Debt}(0)
   for debt in debts
     if debt.nominal > 0.0
       τ_init = max(1, debt.τ_init)

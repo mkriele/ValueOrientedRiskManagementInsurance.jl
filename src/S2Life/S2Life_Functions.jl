@@ -163,7 +163,7 @@ function rfrshock(rfr::Vector{Float64}, s2_mkt_int, int_type)
   elseif int_type == :spot_up
     forw =
       spot2forw(spot .+
-                max(spot .* s2_mkt_int.shock[:spot_up][1:len],
+                max.(spot .* s2_mkt_int.shock[:spot_up][1:len],
                     s2_mkt_int.spot_up_abs_min))
   else # :be
       forw = spot2forw(spot)
@@ -262,7 +262,7 @@ function select!(p::ProjParam, bio::S2LifeBio)
   invs = InvPort(p.t_0, p.T, p.cap_mkt, p.invs_par...)
   for symb in collect(keys(bio.shock))
     merge!(bio.mp_select,
-           Dict(symb => Array(Bool, length(p.l_ins.mps))))
+           Dict(symb => Array{Bool}(length(p.l_ins.mps))))
     for (m, mp) in enumerate(p.l_ins.mps)
       if (symb == :sx_mass_pension) & (!mp.pension_contract)
         bio.mp_select[symb][m] = false
@@ -325,8 +325,8 @@ Helper function: shock for mortality risk
 """
 function qxpxshock!(mp::ModelPoint, bio::S2LifeBio, symb::Symbol)
   mp.prob[:qx] =
-    min(1, (1 + bio.shock[symb]) * convert(Array, mp.prob[:qx]))
-  mp.prob[:sx] = min(1 .- mp.prob[:qx], mp.prob[:sx])
+    min.(1, (1 + bio.shock[symb]) * convert(Array, mp.prob[:qx]))
+  mp.prob[:sx] = min.(1 .- mp.prob[:qx], mp.prob[:sx])
   mp.prob[:px] =  1.0 .- mp.prob[:qx] - mp.prob[:sx]
 end
 
@@ -340,19 +340,19 @@ Helper function: shock for surrender risk
 function sxshock!(mp::ModelPoint, bio::S2LifeBio, symb::Symbol)
   if symb == :sx_down
     mp.prob[:sx] =
-      max((1 + bio.shock[:sx_down]) * convert(Array, mp.prob[:sx]),
+      max.((1 + bio.shock[:sx_down]) * convert(Array, mp.prob[:sx]),
           convert(Array,
                   mp.prob[:sx]) .+
                   bio.shock_param[:sx_down_threshold])
   elseif symb == :sx_up
     mp.prob[:sx] =
-      min(1, (1 + bio.shock[symb]) * convert(Array, mp.prob[:sx]))
+      min.(1, (1 + bio.shock[symb]) * convert(Array, mp.prob[:sx]))
   elseif symb == :sx_mass_pension
     mp.prob[1, :sx] = bio.shock[symb]
   elseif symb == :sx_mass_other
     mp.prob[1, :sx] = bio.shock[symb]
   end
-  mp.prob[:qx] = min(1 .- mp.prob[:sx], mp.prob[:qx])
+  mp.prob[:qx] = min.(1 .- mp.prob[:sx], mp.prob[:qx])
   mp.prob[:px] =  1.0 .- mp.prob[:qx] - mp.prob[:sx]
 end
 

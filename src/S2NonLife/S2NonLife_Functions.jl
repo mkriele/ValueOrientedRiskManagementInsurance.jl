@@ -7,7 +7,7 @@ function NLLob(lob::DataFrame,
                rf,
                corr_prem_res,
                df_lobs_prem_risk)
-  prem = Array(Float64, 2)
+  prem = Array{Float64}(2)
   name = lob[1, :name]
   ## calculate written net premium and earned net premium
   re_prop_q = [lob[1, :re_prop_q_py],
@@ -62,8 +62,8 @@ Calculates the standard deviation of the total premium reserve
 """
 function premrestotalsd(nllobs::Vector{NLLob},
                         corr_lob::Matrix{Float64})
-  indices = Array(Int, 0)
-  prem_res_sd = Array(Float64, 0)
+  indices = Array{Int}(0)
+  prem_res_sd = Array{Float64}(0)
   for i in 1:length(nllobs)
     push!(indices, nllobs[i].index)
     push!(prem_res_sd, nllobs[i].vol_prem_res_sd)

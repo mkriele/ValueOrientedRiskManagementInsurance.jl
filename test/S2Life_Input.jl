@@ -38,7 +38,7 @@ corr_mkt_raw =
    0.25  0.25  0.25  0.25  1.00  0.00;
    0.00  0.00  0.00  0.00  0.00  1.00]
 
-ind_adj = Array(Vector{Int}, 0)
+ind_adj = Array{Vector{Int}}(0)
 push!(ind_adj, [1,2], [1,3], [1,4], [2,1], [3,1], [4,1])
 
 function corrmkt(raw::Matrix, ind_adj, updown::Symbol)

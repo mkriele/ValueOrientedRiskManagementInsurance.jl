@@ -14,7 +14,7 @@ end
 
 function PLInsurance(input::DataFrame,
                      i::Int, n_scen::Int, is_net::Bool)
-  pl = PLInsurance(0, 0, 0, Array(Real, n_scen), 0, 0, 0)
+  pl = PLInsurance(0, 0, 0, Array{Real}(n_scen), 0, 0, 0)
   pl.ceded = (is_net ? input[i, :re_ceded] : 0)
   pl.premium = input[i, :premium] * (1 - pl.ceded)
   pl.costs =
@@ -24,7 +24,7 @@ function PLInsurance(input::DataFrame,
 end
 
 function PLTotal(n_scen)
-  PLTotal(Array(Real, n_scen), 0, 0, 0)
+  PLTotal(Array{Real}(n_scen), 0, 0, 0)
 end
 
 function BuInvestments(id::Symbol,
@@ -134,8 +134,8 @@ function initialize(insurance_input::DataFrame,
                     tau_kendall::Matrix{Real},
                     n_scen::Int)
   n_bu = nrow(insurance_input) + 1
-  bu = Array(BusinessUnit, n_bu)
-  distr = Array(ContinuousUnivariateDistribution, n_bu)
+  bu = Array{BusinessUnit}(n_bu)
+  distr = Array{ContinuousUnivariateDistribution}(n_bu)
 
   for i in insurance_input[:ctr]
     bu[i] =
@@ -160,7 +160,7 @@ function initialize(insurance_input::DataFrame,
   distr[invest_input[1, :ctr]] =
     Normal(invest_input[1, :mean], invest_input[1, :sd])
   gc = GaussCopula(distr, convert(Array{Real, 2},
-                                  sin(π/2 * tau_kendall)))
+                                  sin.(π/2 * tau_kendall)))
   return bu, gc
 end
 

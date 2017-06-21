@@ -15,4 +15,4 @@ println("Testing ECModel")
 include("ECModel_Test.jl")
 
 
-println("test completed")
+println("tests completed")

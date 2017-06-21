@@ -15,12 +15,12 @@ export Projection
 "A stochastic or deterministc process representing a part of the
 Capital market. It always has an object `x` representing the
 development in time"
-abstract Process
+abstract type Process end
 
 
 "Deterministic process, currently the only type of process
 implemented"
-abstract DetermProcess <: Process
+abstract type DetermProcess <: Process end
 
 "A deterministic process representing a stock index. Additional
 objects"
@@ -58,7 +58,7 @@ end
 
 "Represents an individual investments and its development in
 time."
-abstract Invest             ## investment
+abstract type Invest end
 
 dict_ig = Dict{Symbol, Symbol}(:IGStock => :InvestStock,
                                :IGCash => :InvestCash)
@@ -92,7 +92,7 @@ type InvestCash <: Invest
 end
 
 "A group of `Invest` objects of the same sub-type"
-abstract InvestGroup        ## investment group
+abstract type InvestGroup  end
 
 "Allocation of investments within an `InvestGroup` object `ig`"
 type Alloc  ## asset allocation for each year

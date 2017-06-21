@@ -2,8 +2,8 @@
 
 [![Build Status](https://travis-ci.org/mkriele/ValueOrientedRiskManagementInsurance.jl.svg?branch=master)](https://travis-ci.org/mkriele/ValueOrientedRiskManagementInsurance.jl)
 
-**The master branch of this package requires Julia 0.5.x.**  
-(See branch de_2ed for Julia 0.4.x and above)
+**The master branch of this package requires Julia 0.6.x.**  
+(See branch de_2ed for Julia 0.4.x and Julia 0.5.x)
 
 The package provides example calculations for the of the book
 
@@ -16,11 +16,12 @@ It is also intended to use these examples for future editions of the English  tr
 
 As Julia is in flux and since there will be changes in later editions of this book, the table below shows which branch and commit is most appropriate for each edition and each version of Julia:
 
-|Book edition     | Julia version   | Branch    | Errata                |
-|:---------------:|:---------------:|:---------:|:---------------------:|
-| 2nd (German)    | 0.4.x           |  de_2ed   | Korrekturen.md        |
-| 2nd (German)    | 0.5.x           |  de_2ed   | Korrekturen.md        |
-| future editions | 0.5.x           |  master   | -                     |
+|Book edition     | Julia version   | Branch       | Errata                |
+|:---------------:|:---------------:|:------------:|:---------------------:|
+| 2nd (German)    | 0.4.x           |  de_2ed      | Korrekturen.md        |
+| 2nd (German)    | 0.5.x           |  de_2ed      | Korrekturen.md        |
+| 2nd (German)    | 0.6.x           |  de_2ed_j0.6 | Korrekturen.md        |
+| future editions | 0.6.x           |  master      | -                     |
 
 **Errata** contains a list of corrections for errors in the print version.  We list all errors we are aware of. To display the text simply click on the corresponding file name in the list of linked documents above.
 
