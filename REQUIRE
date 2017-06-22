@@ -2,4 +2,3 @@ julia 0.6
 Distributions
 DataArrays
 DataFrames
-Dierckx
