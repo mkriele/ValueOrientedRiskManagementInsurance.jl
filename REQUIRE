@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 julia 0.6
+=======
+julia 0.5
+>>>>>>> 92d5a880c0150dd31cc90adf172b3f553e44cddc
 Distributions
 DataArrays
 DataFrames

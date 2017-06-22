@@ -52,7 +52,11 @@ dict_hwpar =
 
 hw = HWBS(dict_hwpar, df_prices)
 
+<<<<<<< HEAD
 asset_id = Array{Symbol}(nrow(assets))
+=======
+asset_id = Array(Symbol, nrow(assets))
+>>>>>>> 92d5a880c0150dd31cc90adf172b3f553e44cddc
 for row in 1:nrow(assets)
   if assets[row,:Type] in ["zb"]
     asset_id[row] =
