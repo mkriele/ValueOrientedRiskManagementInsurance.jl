@@ -26,7 +26,7 @@ type SSTCapMkt
 end
 
 "Abstract type for assets"
-abstract Asset
+abstract type Asset end
 
 "Zero bond (an instance of an asset)"
 type ZeroBond <: Asset

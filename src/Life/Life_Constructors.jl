@@ -12,7 +12,7 @@ function IGCost(df_cost)
 end
 
 function IGStock(cap_mkt::CapMkt, mv_0, alloc, cost)
-  investments = Array(InvestStock, 0)
+  investments = Array{InvestStock}(0)
   for i = 1:length(alloc.name)
     push!(investments,
           InvestStock(alloc.name[i],
@@ -26,7 +26,7 @@ function IGStock(cap_mkt::CapMkt, mv_0, alloc, cost)
 end
 
 function IGCash(cap_mkt::CapMkt, mv_0, alloc, cost)
-  investments = Array(InvestCash, 0)
+  investments = Array{InvestCash}(0)
   for i = 1:length(alloc.name)
     push!(investments,
           InvestCash(alloc.name[i],
@@ -134,7 +134,7 @@ end
 function LiabIns(t_0::Int, prob_be, λ_be,
                  cost_infl, product, df_port)
   n = nrow(df_port)
-  mps = Array(ModelPoint, 0)
+  mps = Array{ModelPoint}(0)
   dur = 0
   for d = 1:n
     push!(mps, ModelPoint(df_port[d, :n],
@@ -184,7 +184,7 @@ function Debt(t_0, df_debt::DataFrame)
 end
 
 function LiabOther(t_0, df_debts::DataFrame)
-  subord = Array(Debt, nrow(df_debts))
+  subord = Array{Debt}(nrow(df_debts))
   for d = 1:nrow(df_debts)
     subord[d] = Debt(t_0, df_debts[d,:])
   end

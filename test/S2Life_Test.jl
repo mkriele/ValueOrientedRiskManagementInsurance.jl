@@ -20,7 +20,7 @@ for t = 1: T
   end
   @test  convert(Array, β[:sx]) == cumsum(fill(β[1, :sx], 5))
   ## following is used in presentation of pricing calculation:
-  @test_approx_eq(prob_price[t, :qx], (10 + t -1)/10000)
+  @test prob_price[t, :qx] ≈ (10 + t -1)/10000
 end
 
 for i = 1:nrow(df_portfolio)
@@ -53,9 +53,8 @@ prem_price_ratio =
 
 for i = 1:nrow(df_portfolio)
   for t = 1:i
-    @test_approx_eq(prem_price_ratio,
-                    liab_ins.mps[i].β[t, :prem] ./
-                    liab_ins.mps[i].β[t, :qx])
+    @test prem_price_ratio ≈
+                    liab_ins.mps[i].β[t, :prem] ./liab_ins.mps[i].β[t, :qx]
   end
 end
 
@@ -77,8 +76,8 @@ end
 for i = 1:nrow(df_portfolio)
   t_contract = T + df_portfolio[i, :t_start]
   for t = 1:t_contract
-    @test_approx_eq(tp_price[T - t_contract + 1 : T],
-                    liab_ins.mps[i].tpg_price / df_portfolio[i, :n])
+    @test tp_price[T - t_contract + 1 : T] ≈
+          liab_ins.mps[i].tpg_price / df_portfolio[i,:n]
   end
 end
 
@@ -89,7 +88,7 @@ y_stock =
        Float64[proc_stock.x[t] / proc_stock.x[t-1] - 1 for t in 2:T])
 delta_qx = prob_price[1, :qx] - prob_be[1, :qx]
 for t = 1:T
-  @test_approx_eq(y_stock[t], proc_stock.x[1]-1)
+  @test y_stock[t] ≈ proc_stock.x[1]-1
 end
 for t = 1:T
   @test prob_be[t, :qx] + delta_qx == prob_price[t, :qx]
@@ -127,7 +126,7 @@ state_avg =
   Float64[(tmp_state[t + 1] + tmp_state[t]) / 2 for t = 1:T]
 
 
-allocation = 0.5 * (1 .- exp(-max(0, state_avg)))
+allocation = 0.5 * (1 .- exp.(-max.(0, state_avg)))
 ## restore initial allocation
 allocation[1] = invs.igs[:IGStock].alloc.total[1]
 
@@ -135,9 +134,9 @@ state_orig =
   Float64[VORMI.dynstate(t,cap_mkt) for t in 1:T]
 state_avg_orig =
   Float64[VORMI.dynstateavg(t,cap_mkt) for t in 1:T]
-@test_approx_eq(state, state_orig)
-@test_approx_eq(state_avg, state_avg_orig)
-@test_approx_eq(allocation, invs.igs[:IGStock].alloc.total)
+@test state ≈ state_orig
+@test state_avg ≈ state_avg_orig
+@test allocation ≈ invs.igs[:IGStock].alloc.total
 
 y_invest =
   Float64[allocation[t] * y_stock[t] + (1-allocation[t]) *rfr[t]
@@ -145,7 +144,7 @@ y_invest =
 
 t_bonus_quota = dyn.bonus_factor * (y_invest - rfr_price)
 
-sx_basis = Array(Vector{Float64}, nrow(df_portfolio))
+sx_basis = Array{Vector{Float64}}(nrow(df_portfolio))
 for i = 1:nrow(df_portfolio)
   sx_basis[i] = convert(Array, liab_ins.mps[i].prob[:sx])
 end
@@ -180,23 +179,26 @@ mp = deepcopy(liab_ins.mps[d])
 fn = df_portfolio[d, :n]
 prob_sx = convert(Array, prob[:sx]) * df_portfolio[d, :sx_be_fac]
 prob_px = 1.- prob[:qx] - prob_sx
-@test_approx_eq(fn * prem_price, mp.β[t+1, :prem])
-@test_approx_eq(mp.λ[t + 1, :boy] *  mp.λ[t + 1, :cum_infl] / (1 + mp.λ[t + 1, :infl]),
-                λ_be[t + τ - t_0 + 1, :boy] * infl_eoy[t + 1] * ins_sum)
+@test fn * prem_price ≈ mp.β[t+1, :prem]
+@test mp.λ[t + 1, :boy] *  mp.λ[t + 1, :cum_infl] /
+      (1 + mp.λ[t + 1, :infl]) ≈
+      λ_be[t + τ - t_0 + 1, :boy] * infl_eoy[t + 1] * ins_sum
 disc = 1/(1 + rfr[t + 1])
-@test_approx_eq(1 / (1 + rfr_cost[t + 1]) ,
-                disc/(1 - disc * invs.igs[:IGCash].cost.rel[τ + 1]))
-@test_approx_eq(fn * λ_be[t + τ - t_0 + 1, :eoy] * infl_eoy[t + 1] * ins_sum,
-                mp.λ[t + 1, :eoy] * mp.λ[t + 1, :cum_infl] )
-@test_approx_eq(fn * λ_be[t + τ - t_0 + 1, :eoy] * ins_sum,
-                mp.λ[t + 1, :eoy]  )
-
-@test_approx_eq(fn * prob[t + τ - t_0 + 1, :qx] * ins_sum,
-                mp.prob[t + 1, :qx] * mp.β[t + 1, :qx] )
-@test_approx_eq(fn * prob_sx[t + τ - t_0 + 1] * β[t + τ - t_0 + 1, :sx] * prem_price ,
-                mp.prob[t + 1, :sx] * mp.β[t + 1, :sx] )
-@test_approx_eq(fn * prob_px[t + τ - t_0 + 1] * (β[t + τ - t_0 + 1, :px] * ins_sum),
-                mp.prob[t + 1, :px] * (mp.β[t + 1, :px] + 0))
+@test 1 / (1 + rfr_cost[t + 1]) ≈
+      disc/(1 - disc * invs.igs[:IGCash].cost.rel[τ + 1])
+@test fn * λ_be[t + τ - t_0 + 1, :eoy] *
+      infl_eoy[t + 1] * ins_sum ≈
+      mp.λ[t + 1, :eoy] * mp.λ[t + 1, :cum_infl]
+@test fn * λ_be[t + τ - t_0 + 1, :eoy] * ins_sum ≈
+      mp.λ[t + 1, :eoy]
+@test fn * prob[t + τ - t_0 + 1, :qx] * ins_sum ≈
+      mp.prob[t + 1, :qx] * mp.β[t + 1, :qx]
+@test fn * prob_sx[t + τ - t_0 + 1] *
+      β[t + τ - t_0 + 1, :sx] * prem_price  ≈
+      mp.prob[t + 1, :sx] * mp.β[t + 1, :sx]
+@test fn * prob_px[t + τ - t_0 + 1] *
+      β[t + τ - t_0 + 1, :px] * ins_sum ≈
+      mp.prob[t + 1, :px] * (mp.β[t + 1, :px] + 0)
 
 
 ## Going concern ================================================
@@ -214,14 +216,14 @@ for d = 1:nrow(df_portfolio)
 end
 tmp_gc /= sum(df_portfolio[:n])
 
-@test_approx_eq(tmp_gc, liab_ins.gc)
+@test tmp_gc ≈ liab_ins.gc
 
 tmp_gc_extension = [liab_ins.gc; 0]
 tmp_Δgc = zeros(Float64,T)
 for t = 1:T
   tmp_Δgc[t] = tmp_gc_extension[t+1] - tmp_gc_extension[t]
 end
-@test_approx_eq(liab_ins.Δgc, tmp_Δgc)
+@test liab_ins.Δgc ≈ tmp_Δgc
 
 ## Going concern absolute costs ---------------------------------
 cost_abs =
@@ -232,7 +234,7 @@ cost_abs =
                prod(1 + (λ_invest[:IGStock][1:t, :infl_abs])))
           for t = 1:T]
 
-@test_approx_eq(proj.fixed_cost_gc, cost_abs)
+@test proj.fixed_cost_gc ≈ cost_abs
 
 ## Subordinated debt --------------------------------------------
 # cf_liab_other_unscaled =
@@ -242,7 +244,7 @@ cost_abs =
 
 l_other = deepcopy(liab_other)
 VORMI.goingconcern!(l_other, liab_ins.Δgc)
-cf_l_other = Array(Vector{Float64}, T)
+cf_l_other = Array{Vector{Float64}}(T)
 for t = 1:T
   cf_l_other[t] = zeros(Float64, l_other.subord[t].τ_mat)
   fill!(cf_l_other[t], -l_other.subord[t].coupon)
@@ -255,36 +257,30 @@ for t = 1:T
   cf_l_other_total[1:t] += cf_l_other[t]
 end
 
-@test_approx_eq(sum([cf_l_other[t][end] for t = 1:T]),
-                -df_sub_debt[1, :coupon] -
-                  df_sub_debt[1, :nominal])
+@test sum([cf_l_other[t][end] for t = 1:T]) ≈
+      -df_sub_debt[1, :coupon] - df_sub_debt[1, :nominal]
 for t = 2:T
-  @test_approx_eq(cf_l_other[t][1] / cf_l_other[t][end],
-                  df_sub_debt[1, :coupon] /
-                    (df_sub_debt[1, :coupon] +
-                       df_sub_debt[1, :nominal]))
+  @test cf_l_other[t][1] / cf_l_other[t][end] ≈
+        df_sub_debt[1, :coupon] /
+        (df_sub_debt[1, :coupon] + df_sub_debt[1, :nominal])
 end
-@test_approx_eq(
-  sum(-[cumprod(1 ./ (1 .+ rfr))[1:t] ⋅ cf_l_other[t]
-        for t = 1:T]),
-  proj.val_0[1, :l_other])
+@test sum(-[cumprod(1 ./ (1 .+ rfr))[1:t] ⋅ cf_l_other[t]
+            for t = 1:T]) ≈
+      proj.val_0[1, :l_other]
 
 for d = 1:(T-1)
-  @test_approx_eq(
-    (-cumprod(1 ./ (1 .+ rfr[d+1:T])) ⋅ cf_l_other_total[d+1:T]),
-    proj.val[d, :l_other])
+  @test -cumprod(1 ./ (1 .+ rfr[d+1:T])) ⋅
+        cf_l_other_total[d+1:T] ≈
+        proj.val[d, :l_other]
 end
 
 ## gc surplus adjustment ----------------------------------------
-@test_approx_eq(proj.cf[:gc],
-                (proj.val_0[1, :invest] -
-                   proj.val_0[1, :tpg]-
-                   proj.val_0[1, :l_other]) *
-                  liab_ins.Δgc)
+@test proj.cf[:gc] ≈
+      (proj.val_0[1, :invest] - proj.val_0[1, :tpg] - proj.val_0[1, :l_other]) * liab_ins.Δgc
 
 ## Technical provisions for guaranteed benefits, t = 0 ==========
 
-tp = Array(Vector{Float64}, nrow(df_portfolio))
+tp = Array{Vector{Float64}}(nrow(df_portfolio))
 tp_0 = zeros(Float64, nrow(df_portfolio))
 
 for d = 1:nrow(df_portfolio)
@@ -301,10 +297,8 @@ end
 
 for d = 1:nrow(df_portfolio)
   for t = 1:(T + df_portfolio[d, :t_start])
-    @test_approx_eq(VORMI.tpg(t,
-                              cap_mkt.rfr.x,
-                              liab_ins.mps[d]),
-                    df_portfolio[d, :n] * tp[d][t])
+    @test VORMI.tpg(t, cap_mkt.rfr.x, liab_ins.mps[d]) ≈
+          df_portfolio[d, :n] * tp[d][t]
   end
 end
 
@@ -321,42 +315,33 @@ for d = 1:nrow(df_portfolio)
   end
 end
 
-@test_approx_eq(tp_all_0, proj.val_0[1, :tpg])
+@test tp_all_0 ≈ proj.val_0[1, :tpg]
 
 ## Cashflows year 1 =============================================
 
 ## bi-quotient --------------------------------------------------
-@test_approx_eq(VORMI.bonusrate(1,
-                                y_invest[1],
-                                liab_ins.mps[1],
-                                dyn),
-                t_bonus_quota[1])
-@test_approx_eq(VORMI.yield(1, cap_mkt.rfr), rfr[1])
-@test_approx_eq(VORMI.yield(1, cap_mkt.stock), y_stock[1])
+@test VORMI.bonusrate(1, y_invest[1], liab_ins.mps[1], dyn) ≈
+      t_bonus_quota[1]
+@test VORMI.yield(1, cap_mkt.rfr) ≈ rfr[1]
+@test VORMI.yield(1, cap_mkt.stock) ≈ y_stock[1]
 ind_bonus_1 =
   y_stock[1] / (t_bonus_quota[1] + liab_ins.mps[1].rfr_price[1])
 
-@test_approx_eq(VORMI.yield(0, cap_mkt.stock),
-                cap_mkt.stock.yield_0)
-@test_approx_eq(VORMI.yield(0, cap_mkt.rfr),
-                cap_mkt.rfr.yield_0)
+@test VORMI.yield(0, cap_mkt.stock) ≈ cap_mkt.stock.yield_0
+@test VORMI.yield(0, cap_mkt.rfr) ≈ cap_mkt.rfr.yield_0
 ind_bonus_hypo =
   cap_mkt.stock.yield_0 /
   (liab_ins.mps[1].bonus_rate_hypo + liab_ins.mps[1].rfr_price_0)
 
 bi_quot_1 =ind_bonus_1 / ind_bonus_hypo
 
-@test_approx_eq(bi_quot_1,
-                VORMI.biquotient(1,
-                                 y_invest[1],
-                                 cap_mkt, invs,
-                                 liab_ins.mps[1],
-                                 dyn))
+@test bi_quot_1 ≈ VORMI.biquotient(1, y_invest[1], cap_mkt,
+                                   invs, liab_ins.mps[1], dyn)
 
 ## In the text we assume that b^C,hypo does not depend on C
 for d = 2:nrow(df_portfolio)
-  @test_approx_eq(df_portfolio[1,:bonus_rate_hypo],
-                  df_portfolio[d,:bonus_rate_hypo])
+  @test df_portfolio[1,:bonus_rate_hypo] ≈
+        df_portfolio[d,:bonus_rate_hypo]
 end
 
 ## δ_sx_one, qx_one, sx_one, px_one are vectors
@@ -368,8 +353,7 @@ end
 t = 1
 for d = 1:nrow(df_portfolio)
   if length(sx_basis[d]) >= t
-    @test_approx_eq(sx_basis[d][t],
-                    liab_ins.mps[d].prob[t, :sx])
+    @test sx_basis[d][t] ≈ liab_ins.mps[d].prob[t, :sx]
   end
 end
 
@@ -414,27 +398,23 @@ cf_bonus_one =
 cf_invest_one =
   (invs.mv_0+cf_prem_one + cf_λ_boy_one) * y_invest[1]
 
-@test_approx_eq(cf_prem_one,
-                ins_sum * sum(df_portfolio[:,:n]) *
-                  prem_price_ratio)
-@test_approx_eq(cf_qx_one,
-                -sum([qx_one[d] * df_portfolio[d,:n] * ins_sum
-                      for d = 1:nrow(df_portfolio)]))
-@test_approx_eq(cf_sx_one,
-                -sum([sx_one[d] * sx_fac * df_portfolio[d,:n] *
+@test cf_prem_one ≈ ins_sum * sum(df_portfolio[:,:n]) *
+                    prem_price_ratio
+@test cf_qx_one ≈ -sum([qx_one[d] * df_portfolio[d,:n] * ins_sum
+                        for d = 1:nrow(df_portfolio)])
+@test cf_sx_one ≈ -sum([sx_one[d] * sx_fac * df_portfolio[d,:n] *
                         (T - d +1) *  ins_sum * prem_price_ratio
-                      for d = 1:nrow(df_portfolio)]))
-@test_approx_eq(cf_px_one,
-                -px_one[1] * df_portfolio[1,:n] *  ins_sum)
-@test_approx_eq(cf_bonus_one, proj.cf[1, :bonus])
-@test_approx_eq(cf_prem_one, proj.cf[t, :prem])
-@test_approx_eq(cf_λ_boy_one, proj.cf[t, :λ_boy])
-@test_approx_eq(cf_λ_eoy_one, proj.cf[t, :λ_eoy])
-@test_approx_eq(cf_qx_one, proj.cf[t, :qx])
-@test_approx_eq(cf_sx_one, proj.cf[t, :sx])
-@test_approx_eq(cf_px_one, proj.cf[t, :px])
-@test_approx_eq(cf_invest_one, proj.cf[t, :invest])
-@test_approx_eq(cf_l_other_total[1], proj.cf[t, :l_other])
+                        for d = 1:nrow(df_portfolio)])
+@test cf_px_one ≈ -px_one[1] * df_portfolio[1,:n] *  ins_sum
+@test cf_bonus_one ≈ proj.cf[1, :bonus]
+@test cf_prem_one ≈ proj.cf[t, :prem]
+@test cf_λ_boy_one ≈ proj.cf[t, :λ_boy]
+@test cf_λ_eoy_one ≈ proj.cf[t, :λ_eoy]
+@test cf_qx_one ≈ proj.cf[t, :qx]
+@test cf_sx_one ≈ proj.cf[t, :sx]
+@test cf_px_one ≈ proj.cf[t, :px]
+@test cf_invest_one ≈ proj.cf[t, :invest]
+@test cf_l_other_total[1] ≈ proj.cf[t, :l_other]
 
 
 ## technical provisions for guaranteed benefits -----------------
@@ -442,7 +422,7 @@ cf_invest_one =
 ## the following is used in the text
 @test(abs(δ_sx_one[1]-1) > eps(1.) ? true : false)
 
-probs = Array(DataFrame, nrow(df_portfolio))
+probs = Array{DataFrame}(nrow(df_portfolio))
 for d = 1:nrow(df_portfolio)
   probs[d] = deepcopy(prob_be)
   probs[d][:sx] =
@@ -465,17 +445,13 @@ tpg_0_1_1 =
          df_portfolio[d, :n]
        for d = 1:nrow(df_portfolio)])
 
-@test_approx_eq(tpg_0_1_1, proj.val[1,:tpg])
-@test_approx_eq(proj.val[1,:tpg]-proj.val_0[1,:tpg],
-                -proj.cf[1,:Δtpg])
+@test tpg_0_1_1 ≈ proj.val[1,:tpg]
+@test proj.val[1,:tpg]-proj.val_0[1,:tpg] ≈ -proj.cf[1,:Δtpg]
 
 # Profit and tax ------------------------------------------------
-@test_approx_eq(sum(convert(Array, proj.cf[1, [:prem, :λ_boy,
-                                               :λ_eoy, :qx,
-                                               :sx, :px, :invest,
-                                               :Δtpg, :l_other,
-                                               :bonus]])),
-                proj.cf[1, :profit])
+@test sum(convert(Array, proj.cf[1, [:prem, :λ_boy, :λ_eoy, :qx,
+                                     :sx, :px, :invest, :Δtpg, :l_other, :bonus]])) ≈
+      proj.cf[1, :profit]
 
 tax_pre = zeros(Float64, T)
 tax= zeros(Float64, T)
@@ -494,7 +470,7 @@ for t = 1:T
   tax_credit_vec[t] = tax_credit
 end
 
-@test_approx_eq(tax, -proj.cf[:,:tax])
+@test tax ≈ -proj.cf[:,:tax]
 
 ## Dividends ----------------------------------------------------
 surp_quota = zeros(Float64,T)
@@ -515,12 +491,9 @@ invest_eoy_pre_divid =
   invest_eoy_prev + proj.cf[:profit] + proj.cf[:tax] -
   proj.cf[:Δtpg] + proj.cf[:gc]
 
-@test_approx_eq(invest_boy, invs.mv_boy)
-@test_approx_eq(invest_eoy_pre_divid,
-                Float64[VORMI.investpredivid(t,
-                                             invs,
-                                             proj)
-                        for t = 1:T])
+@test invest_boy ≈ invs.mv_boy
+@test invest_eoy_pre_divid ≈
+      Float64[VORMI.investpredivid(t, invs, proj) for t = 1:T]
 
 val_liab = convert(Array, proj.val[:tpg] .- proj.val[:l_other])
 q_surp =
@@ -530,29 +503,25 @@ q_surp =
 
 ## The following was used in the text:
 @test q_surp[1] > dyn.quota_surp
-@test_approx_eq(
-  min(0,convert(Array,
-                (1+dyn.quota_surp) * ( proj.val[:tpg] +
-                                        proj.val[:l_other])-
-                  invest_eoy_pre_divid)),
-  proj.cf[:divid])
+@test min.(0, convert(Array, (1+dyn.quota_surp) *
+      (proj.val[:tpg] + proj.val[:l_other]) - invest_eoy_pre_divid)) ≈
+      proj.cf[:divid]
 
 ## Dividend mechanism works:
 for t = 1:T
   if (proj.cf[t, :divid] < 0) &
       (proj.val[t, :tpg] + proj.val[t, :l_other] > 0)
-    @test_approx_eq(dyn.quota_surp,
-                    (proj.val[t, :invest] -
-                       proj.val[t, :tpg] - proj.val[t, :l_other]) /
-                      (proj.val[t, :tpg] + proj.val[t, :l_other]) )
+    @test dyn.quota_surp ≈
+          (proj.val[t, :invest] -
+          proj.val[t, :tpg] - proj.val[t, :l_other]) / (proj.val[t, :tpg] + proj.val[t, :l_other])
   end
   if proj.cf[t, :divid] ≥ 0
-    @test_approx_eq(proj.cf[t, :divid], 0)
+    @test proj.cf[t, :divid] ≈ 0
   end
 end
 
-@test_approx_eq(proj.val[1, :invest],
-                invest_eoy_pre_divid[1] + proj.cf[1, :divid])
+@test proj.val[1, :invest] ≈
+      invest_eoy_pre_divid[1] + proj.cf[1, :divid]
 
 ## Balance sheet for ≥ 0 ========================================
 
@@ -565,20 +534,20 @@ end
 fdb_0 =
   (fdb[1] -  proj.cf[1, :bonus]) /  (1 .+ rfr[1])
 
-@test_approx_eq(-cumprod(1 ./ (1 .+ rfr)) ⋅ proj.cf[:bonus],
-                proj.val_0[1,:bonus])
-@test_approx_eq(fdb_0, proj.val_0[1,:bonus])
-@test_approx_eq(fdb, proj.val[:bonus])
+@test -cumprod(1 ./ (1 .+ rfr)) ⋅ proj.cf[:bonus] ≈
+      proj.val_0[1,:bonus]
+@test fdb_0 ≈ proj.val_0[1,:bonus]
+@test fdb ≈ proj.val[:bonus]
 
 balance = vcat(proj.val_0, proj.val)
 ## here reserves for boni are considered part of capital.
-@test_approx_eq(balance[:surplus],
-                balance[:invest] - balance[:tpg] - balance[:l_other])
+@test balance[:surplus] ≈
+      balance[:invest] - balance[:tpg] - balance[:l_other]
 
 ## recall that balance[t, :] = proj.val[t-1, :] for t>1
 for t in 2:(T+1)
   for w in [:invest, :tpg, :l_other, :surplus, :bonus, :cost_prov]
-     @test_approx_eq(balance[t, w], proj.val[t-1, w])
+     @test balance[t, w] ≈ proj.val[t-1, w]
   end
 end
 
@@ -597,7 +566,7 @@ for τ = 1:5
       invs.igs[:IGCash].cost.rel[t]
     x -= proj.fixed_cost_gc[t]
   end
-  @test_approx_eq_eps(x, 0, 1e-14)
+  @test x ≈ 0 atol=1.0e-14
 end
 
 
@@ -610,11 +579,9 @@ for t = (T-1):-1:1
 end
 tp_cost_abs_0 = tpgprev(tp_cost_abs[1], 0)
 
-@test_approx_eq([tp_cost_abs_0; tp_cost_abs],
-                Float64[VORMI.tpgfixed(t,
-                                       cap_mkt.rfr.x[1:liab_ins.dur],
-                                       proj.fixed_cost_gc)
-                        for t in 0:T])
+@test [tp_cost_abs_0; tp_cost_abs] ≈
+      Float64[VORMI.tpgfixed(t, cap_mkt.rfr.x[1:liab_ins.dur],
+              proj.fixed_cost_gc) for t in 0:T]
 
 ## S2 Example ###################################################
 
@@ -622,9 +589,9 @@ liabs_mod_0 = balance[1,:tpg] +balance[1,:bonus] + balance[1, :cost_prov]
 assets_mod_0 = balance[1,:invest] + proj.tax_credit_0
 bof_0 = assets_mod_0 - liabs_mod_0
 symb_bal = [:invest, :tpg, :l_other, :surplus, :bonus]
-@test_approx_eq(convert(Array, balance[1,symb_bal]),
-                convert(Array, s2.balance[1, symb_bal]))
-@test_approx_eq(VORMI.bof(s2, :be), bof_0)
+@test convert(Array, balance[1,symb_bal]) ≈
+      convert(Array, s2.balance[1, symb_bal])
+@test VORMI.bof(s2, :be) ≈ bof_0
 
 ## S2 Example Interest ------------------------------------------
 
@@ -638,25 +605,23 @@ rfr_down = VORMI.rfrshock(cap_mkt.rfr.x,
                           s2_mkt_int,
                           :spot_down)
 
-@test_approx_eq(rfr, VORMI.spot2forw(VORMI.forw2spot(rfr)))
-@test_approx_eq(rfr_down,
-                VORMI.spot2forw(VORMI.forw2spot(rfr)
-                .* (1 .+ ds2_mkt_int[:shock][:spot_down][1:T])))
-@test_approx_eq(rfr_up,
-                VORMI.spot2forw(
+@test rfr ≈ VORMI.spot2forw(VORMI.forw2spot(rfr))
+@test rfr_down ≈
+      VORMI.spot2forw(VORMI.forw2spot(rfr) .*
+      (1 .+ ds2_mkt_int[:shock][:spot_down][1:T]))
+@test rfr_up ≈ VORMI.spot2forw(
                   VORMI.forw2spot(rfr) .+
-                  max(ds2_mkt_int[:spot_up_abs_min],
+                  max.(ds2_mkt_int[:spot_up_abs_min],
                       VORMI.forw2spot(rfr) .*
-                      ds2_mkt_int[:shock][:spot_up][1:T])))
+                      ds2_mkt_int[:shock][:spot_up][1:T]))
 
 ## S2 Example Equity --------------------------------------------
 ind_mkt = findin( ds2[:mdl], [:S2Mkt])[1]
 ind_mkt_eq = findin(ds2_mkt[:mdl], [:S2MktEq])[1]
 s2_mkt_eq = s2.mds[ind_mkt].mds[ind_mkt_eq]
 bal = s2_mkt_eq.balance
-@test_approx_eq(bal[bal[:scen] .== :type_1,:invest][1],
-                (1 + eq_shock[:type_1]) * sum(df_stock[:mv_0]) +
-                  sum(df_cash[:mv_0]))
+@test bal[bal[:scen] .== :type_1,:invest][1] ≈
+      (1 + eq_shock[:type_1]) * sum(df_stock[:mv_0]) + sum(df_cash[:mv_0])
 
 ## S2 Example Market risk----------------------------------------
 ind_mkt = findin( ds2[:mdl], [:S2Mkt])[1]
@@ -665,10 +630,10 @@ s2_mkt = s2.mds[ind_mkt]
 corr_mkt = s2_mkt.corr_down[1:2,1:2]
 scr_mkt_net = [s2_mkt_int.scr[NET], s2_mkt_eq.scr[NET]]
 scr_mkt_gross = [s2_mkt_int.scr[GROSS], s2_mkt_eq.scr[GROSS]]
-@test_approx_eq(sqrt(scr_mkt_net ⋅ (corr_mkt * scr_mkt_net)),
-                s2_mkt.scr[NET])
-@test_approx_eq(sqrt(scr_mkt_gross ⋅ (corr_mkt * scr_mkt_gross)),
-                s2_mkt.scr[GROSS])
+@test sqrt(scr_mkt_net ⋅ (corr_mkt * scr_mkt_net)) ≈
+      s2_mkt.scr[NET]
+@test sqrt(scr_mkt_gross ⋅ (corr_mkt * scr_mkt_gross)) ≈
+      s2_mkt.scr[GROSS]
 
 ## Default Risk type 1 -----------------------------------------
 ind_def = findin( ds2[:mdl], [:S2Def])[1]
@@ -702,8 +667,8 @@ accs_scr_low = s2.mds[ind_def].mds[1].scr_par[:low][1]
 accs_scr_low_fac = s2.mds[ind_def].mds[1].scr_par[:low][2]
 accs_scr_def = accs_scr_low_fac * sqrt(accs_var)
 
-@test_approx_eq(s2_def.scr[NET], accs_scr_def)
-@test_approx_eq(s2_def.scr[GROSS], accs_scr_def)
+@test s2_def.scr[NET] ≈ accs_scr_def
+@test s2_def.scr[GROSS] ≈ accs_scr_def
 
 ## Life mortality -----------------------------------------------
 ind_life = findin( ds2[:mdl], [:S2Life])[1]
@@ -778,10 +743,10 @@ scrs_life = [s2_life_qx.scr[GROSS],
              s2_life_cost.scr[GROSS],
              s2_life_cat.scr[GROSS]]
 
-@test_approx_eq(sqrt(scrs_life ⋅ (life_corr * scrs_life)),
-                s2_life.scr[GROSS])
-@test_approx_eq(sqrt(scrs_life_net ⋅ (life_corr * scrs_life_net)),
-                s2_life.scr[NET])
+@test sqrt(scrs_life ⋅ (life_corr * scrs_life)) ≈
+      s2_life.scr[GROSS]
+@test sqrt(scrs_life_net ⋅ (life_corr * scrs_life_net)) ≈
+      s2_life.scr[NET]
 
 ## BSCR =========================================================
 
@@ -793,34 +758,26 @@ bscrs_gross =
 
 bscrs_net = [s2_mkt.scr[NET], s2_def.scr[NET], s2_life.scr[NET]]
 
-@test_approx_eq(sqrt(bscrs_net ⋅ (bscr_corr * bscrs_net)),
-                s2.bscr[NET])
-@test_approx_eq(sqrt(bscrs_gross ⋅ (bscr_corr * bscrs_gross)),
-                s2.bscr[GROSS])
+@test sqrt(bscrs_net ⋅ (bscr_corr * bscrs_net)) ≈ s2.bscr[NET]
+@test sqrt(bscrs_gross ⋅ (bscr_corr * bscrs_gross)) ≈
+      s2.bscr[GROSS]
 
 ## operational risk =============================================
-@test_approx_eq(s2.op.comp_tp,
-                (proj.val_0[1, :tpg] + proj.val_0[1, :bonus]) *
-                  s2.op.fac[:tp])
-@test_approx_eq(s2.op.comp_prem ,
-                s2.op.fac[:prem] * s2.op.prem_earned +
-                s2.op.fac[:prem] *
-                  max(0,
-                      s2.op.prem_earned -
-                        s2.op.fac[:prem_py] * s2.op.prem_earned_prev))
+@test s2.op.comp_tp ≈
+      (proj.val_0[1, :tpg] + proj.val_0[1, :bonus]) * s2.op.fac[:tp]
+@test s2.op.comp_prem  ≈
+      s2.op.fac[:prem] * s2.op.prem_earned + s2.op.fac[:prem] *  max(0, s2.op.prem_earned -
+                s2.op.fac[:prem_py] * s2.op.prem_earned_prev)
 
 ## Adjustments ==================================================
 ## Adj technical provisions -------------------------------------
-@test_approx_eq(-max(0.0,
-                    min(s2.bscr[GROSS] - s2.bscr[NET],
-                        VORMI.fdb(s2, :be))),
-                s2.adj_tp)
+@test -max(0.0,  min(s2.bscr[GROSS] - s2.bscr[NET],
+                     VORMI.fdb(s2, :be))) ≈
+      s2.adj_tp
 @test s2.adj_dt == 0
-@test_approx_eq(s2.liabs_mod,
-                s2.balance[1,:tpg] +
-                  s2.balance[1,:bonus] +
-                  s2.balance[1,:cost_prov])
-@test_approx_eq(s2.invest_mod, s2.balance[1,:invest])
+@test s2.liabs_mod ≈
+      s2.balance[1,:tpg] + s2.balance[1,:bonus] + s2.balance[1,:cost_prov]
+@test s2.invest_mod ≈ s2.balance[1,:invest]
 
 ds2[:coc]
 
@@ -834,11 +791,10 @@ src_future = (tpbe * s2.scr / tpbe[1])[1:T]
 discount = 1 ./ cumprod(1 .+ rfr)
 risk_margin = coc * src_future ⋅ discount
 
-@test_approx_eq(s2.risk_margin, risk_margin)
+@test s2.risk_margin ≈ risk_margin
 
-@test_approx_eq(s2.scr_ratio,
-                (s2.invest_mod - s2.liabs_mod - s2.risk_margin) /
-                s2.scr)
+@test s2.scr_ratio ≈
+      (s2.invest_mod - s2.liabs_mod - s2.risk_margin) / s2.scr
 @test s2.scr_ratio > 1
 
 #################################################################

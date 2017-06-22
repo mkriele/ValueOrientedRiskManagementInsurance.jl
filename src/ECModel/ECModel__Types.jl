@@ -13,7 +13,7 @@ type GaussCopula
 end
 
 "Profit and loss account of an insurance company component"
-abstract ProfitLoss
+abstract type ProfitLoss end
 
 "Profit loss account for the insurance result from a line
 of business (lob)"
@@ -63,7 +63,7 @@ type PLTotal <: ProfitLoss
 end
 
 " A business unit is a line of business or investments"
-abstract BusinessUnit
+abstract type BusinessUnit end
 
 "Business unit: Line of business"
 type BuInsurance <: BusinessUnit

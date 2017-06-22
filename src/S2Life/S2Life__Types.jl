@@ -8,7 +8,7 @@ const GROSS = 1
 const NET = 2
 
 "Abstract type for an S2 module"
-abstract S2Module
+abstract type S2Module end
 
 "Dummy type for those S2 modules that have not been implemented"
 type S2NotImplemented <: S2Module
@@ -21,23 +21,23 @@ function S2NotImplemented(x...)
 end
 
 "S2 market property risk module, not yet implemented"
-typealias S2MktProp S2NotImplemented
+const S2MktProp = S2NotImplemented
 "S2 market spread risk module, not yet implemented"
-typealias S2MktSpread S2NotImplemented
+const S2MktSpread = S2NotImplemented
 "S2 market currency risk module, not yet implemented"
-typealias S2MktFx S2NotImplemented
+const S2MktFx = S2NotImplemented
 "S2 market concentration risk module, not yet implemented"
-typealias S2MktConc S2NotImplemented
+const S2MktConc = S2NotImplemented
 "S2 default (type 2) risk module, not yet implemented"
-typealias S2Def2 S2NotImplemented
+const S2Def2 = S2NotImplemented
 "S2 life morbidity risk module, not yet implemented"
-typealias S2LifeMorb S2NotImplemented
+const S2LifeMorb = S2NotImplemented
 "S2 life revision risk module, not yet implemented"
-typealias S2LifeRevision S2NotImplemented
+const S2LifeRevision = S2NotImplemented
 "S2 health risk module, not yet implemented"
-typealias S2Health S2NotImplemented
+const S2Health = S2NotImplemented
 "S2 non-life risk module, not yet implemented"
-typealias S2NonLife S2NotImplemented
+const S2NonLife = S2NotImplemented
 
 "Projection parameters for S2-calculations without
 S2 calibration parameters"

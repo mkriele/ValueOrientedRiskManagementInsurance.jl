@@ -61,7 +61,7 @@ end
 
 ## S2Mkt --------------------------------------------------------
 function S2Mkt(ds2_mkt::Dict{Symbol, Any})
-  mds = Array(S2Module, 0)
+  mds = Array{S2Module}(0)
   corr_up = ds2_mkt[:corr](ds2_mkt[:raw], ds2_mkt[:adj], :up)
   corr_down = ds2_mkt[:corr](ds2_mkt[:raw], ds2_mkt[:adj], :down)
   scr = zeros(Float64, 2)
@@ -96,10 +96,10 @@ end
 
 ## S2Def1 -------------------------------------------------------
 function S2Def1(ds2_def_1)
-  tlgd = Array(Float64, 0)
-  slgd = Array(Float64, 0)
-  u = Array(Float64, 0, 0)
-  v = Array(Float64, 0)
+  tlgd = Array{Float64}(0)
+  slgd = Array{Float64}(0)
+  u = Array{Float64}(0, 0)
+  v = Array{Float64}(0)
   scr_par = Dict{Symbol, Vector{Float64}}()
   for i = 1:nrow(ds2_def_1[:scr_par])
     merge!(scr_par,
@@ -120,8 +120,8 @@ function S2Def1(param::ProjParam,
   prob = [ds2_def_1[:prob][1, cqs] for cqs in cqs_vec]
   def.tlgd = zeros(Float64, length(cqs_vec))
   def.slgd = zeros(Float64, length(cqs_vec))
-  def.u = Array(Float64, length(cqs_vec), length(cqs_vec))
-  def.v = Array(Float64, length(cqs_vec))
+  def.u = Array{Float64}(length(cqs_vec), length(cqs_vec))
+  def.v = Array{Float64}(length(cqs_vec))
 
   def.v = 1.5 * prob .* (1 .- prob) ./ (2.5 .- prob)
   for i = 1:size(def.u,1), j = 1:1:size(def.u,2)
@@ -145,7 +145,7 @@ end
 
 ## S2Def --------------------------------------------------------
 function S2Def(ds2_def)
-  mds = Array(S2Module, 0)
+  mds = Array{S2Module}(0)
   corr = ds2_def[:corr]
   scr = zeros(Float64, 2)
   return S2Def(mds, corr, scr)
@@ -228,7 +228,7 @@ end
 
 ## S2Life -------------------------------------------------------
 function S2Life(ds2_life::Dict{Symbol, Any})
-  mds = Array(S2Module, 0)
+  mds = Array{S2Module}(0)
   corr = ds2_life[:corr]
   scr = zeros(Float64, 2)
   return S2Life(mds, corr, scr)
@@ -259,7 +259,7 @@ S2Op(ds2_op::Dict{Symbol, Float64}, s2_op::Dict) =
 
 ## S2 -----------------------------------------------------------
 function   S2(ds2_op, s2_op)
-  mds = Array(S2Module, 0)
+  mds = Array{S2Module}(0)
   balance = DataFrame()
   corr = zeros(Float64, 5, 5)
   bscr = zeros(Float64, 2)

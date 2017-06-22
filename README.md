@@ -2,9 +2,9 @@
 
 [![Build Status](https://travis-ci.org/mkriele/ValueOrientedRiskManagementInsurance.jl.svg?branch=master)](https://travis-ci.org/mkriele/ValueOrientedRiskManagementInsurance.jl)
 
-**This package requires Julia 0.4.x.**
+**This package requires Julia 0.6.x.**
 
-***These files are part of branch `de_2ed`
+***These files are part of branch `de_2ed_j0.6`
 (relating to the 2nd edition of the German version of the book)***
 
 The package provides example calculations for the of the book
@@ -18,11 +18,11 @@ It is also intended to use these examples for future editions of the English  tr
 
 As Julia is in flux and since there will be changes in later editions of this book, the table below shows which branch and commit is most appropriate for each edition and each version of Julia:
 
-|Book edition    | Julia version   | Branch    |
-|:--------------:|:---------------:|:---------:|
-| 2nd (German)   | 0.4.x           |  de_2ed   |
-| 2nd (German)   | 0.5.x           |  de_2ed   |
-
+|Book edition    | Julia version   | Branch       |
+|:--------------:|:---------------:|:------------:|
+| 2nd (German)   | 0.4.x           |  de_2ed      |
+| 2nd (German)   | 0.5.x           |  de_2ed      |
+| 2nd (German)   | 0.6.x           |  de_2ed_j0.6 |
 
 ## Structure of the package
 

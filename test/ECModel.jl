@@ -9,20 +9,20 @@ println("Start ECModel ...")
 #################################################################
 "Create DataFrame from information on business units and total"
 function getdf(bu, total)
-  df =  DataFrame(BU = Array(Symbol, 0),
-                  GrossNet = Array(Symbol, 0),
-                  CumProb = Array(Float64, 0),
-                  Profit = Array(Real, 0))
+  df =  DataFrame(BU = Array{Symbol}(0),
+                  GrossNet = Array{Symbol}(0),
+                  CumProb = Array{Float64}(0),
+                  Profit = Array{Real}(0))
 
   for i = 1:length(bu)
     append!(df, DataFrame(
-      BU = fill!(Array(Symbol, n_scen), bu[i].id),
-      GrossNet = fill!(Array(Symbol, n_scen), :gross),
+      BU = fill!(Array{Symbol}(n_scen), bu[i].id),
+      GrossNet = fill!(Array{Symbol}(n_scen), :gross),
       CumProb = real(collect(1:n_scen)) /  n_scen,
       Profit = sort(bu[i].gross.profit)))
     append!(df, DataFrame(
-      BU = fill!(Array(Symbol, n_scen), bu[i].id),
-      GrossNet = fill!(Array(Symbol, n_scen), :net),
+      BU = fill!(Array{Symbol}(n_scen), bu[i].id),
+      GrossNet = fill!(Array{Symbol}(n_scen), :net),
       CumProb = real(collect(1:n_scen)) /  n_scen,
       Profit = sort(bu[i].net.profit)))
   end
@@ -227,10 +227,10 @@ function optreraroc(ins_input::DataFrame,
                     n_points::Int)
   ins = deepcopy(ins_input)
   unif = Uniform()
-  ceded = Array(Real, nrow(ins), n_points)
-  profit_net = Array(Real, n_points)
-  ec_net = Array(Real, n_points)
-  rorac_net = Array(Real, n_points)
+  ceded = Array{Real}(nrow(ins), n_points)
+  profit_net = Array{Real}(n_points)
+  ec_net = Array{Real}(n_points)
+  rorac_net = Array{Real}(n_points)
   i_opt, profit_net_opt, ec_net_opt, rorac_net_opt =
     1, 0.0, 0.0, 0.0
 
@@ -274,9 +274,9 @@ function optreeva(ins_input::DataFrame,
                   hurdle::Real)
   ins = deepcopy(ins_input)
   unif = Uniform()
-  ceded = Array(Real, nrow(ins), n_points)
-  avg_ceded = Array(Real, n_points)
-  eva_net = Array(Real, n_points)
+  ceded = Array{Real}(nrow(ins), n_points)
+  avg_ceded = Array{Real}(n_points)
+  eva_net = Array{Real}(n_points)
   i_opt = 0
   avg_ceded_opt  = 0.0
   eva_net_opt = 0.0
@@ -320,11 +320,11 @@ function optre(ins_input::DataFrame,
                avg_ceded::Real)
   ins = deepcopy(ins_input)
   unif = Uniform()
-  ceded = Array(Real, nrow(ins), n_points)
-  random =  Array(Real, nrow(ins), n_points)
-  profit_net = Array(Real, n_points)
-  ec_net = Array(Real, n_points)
-  rorac_net = Array(Real, n_points)
+  ceded = Array{Real}(nrow(ins), n_points)
+  random =  Array{Real}(nrow(ins), n_points)
+  profit_net = Array{Real}(n_points)
+  ec_net = Array{Real}(n_points)
+  rorac_net = Array{Real}(n_points)
   i_opt, profit_net_opt, ec_net_opt, rorac_net_opt =
     0, 0.0, 0.0, 0.0
 
