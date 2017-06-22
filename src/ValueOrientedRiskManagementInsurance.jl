@@ -53,7 +53,7 @@ import Distributions.rand
 
 ## General functions --------------------------------------------
 ## Expected shortfall
-es(x::Vector,α) =
+es(x, α) =
   mean(sort(x, rev = true)[1:ceil(Integer, (1 - α) * length(x))])
 
 # Simplfied Swiss Solvency Test----------------------------------
@@ -72,6 +72,9 @@ include("S2Life/S2Life_Functions.jl")
 
 # Chain Ladder Utilities ----------------------------------------
 include("ChainLadder/ChainLadderMack.jl")
+
+# 1+1 Hull-White Black-Scholes model -----------------------------
+include("HullWhiteBlackScholes/HullWhiteBlackScholes.jl")
 
 # Simplified Solvency 2 Non-Life --------------------------------
 include("S2NonLife/S2NonLife__Types.jl")
