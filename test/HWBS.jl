@@ -1,8 +1,8 @@
 using Distributions
 using DataFrames
 using Base.Test
-using Dierckx
 using ValueOrientedRiskManagementInsurance
+using Dierckx
 
 
 import ValueOrientedRiskManagementInsurance.zb
@@ -41,16 +41,31 @@ t₀ = :x2016_09
 spot₀ =
   df_chf_shorts[find(x->x=="SARON",df_chf_shorts[:Type])[1], t₀]
 
-df_prices = DataFrame()
-df_prices[:t] = vcat(0.0, df_chf_spots[:Duration])
-df_prices[:spot] = vcat(spot₀, df_chf_spots[t₀])
+df_spot_coarse = DataFrame()
+df_spot_coarse[:t] = vcat(0.0, df_chf_spots[:Duration])
+df_spot_coarse[:spot] = vcat(spot₀, df_chf_spots[t₀])
+
+
 
 dict_hwpar =
   Dict{Symbol, Real}( Symbol( hwpar[i, :name]) =>
                       hwpar[i, :value] for i = 1:nrow(hwpar))
 
+function spot_coarse2fine(nʸ, df_spot_coarse)
+  δt = 1 / nʸ
+  nᵀ = maximum(df_spot_coarse[:t]) * nʸ
+  func_spot =
+    Spline1D( convert(Array, df_spot_coarse[:t]),
+              convert(Array, df_spot_coarse[:spot]))
+  # Durations and corresponding spot rates
+  DataFrame(t = collect(1:nᵀ) * δt,
+            spot = func_spot(collect(1:nᵀ) * δt))
+end
 
-hw = HWBS(dict_hwpar, df_prices)
+
+
+hw = HWBS(dict_hwpar, spot_coarse2fine(dict_hwpar[:nʸ],
+                                       df_spot_coarse))
 
 asset_id = Array{Symbol}(nrow(assets))
 for row in 1:nrow(assets)

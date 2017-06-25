@@ -2,7 +2,6 @@ export HWBS, distr, rand_rw, zb
 
 using Distributions
 using DataFrames
-using Dierckx
 
 """
 The 1+1 Hull-White Black-Scholes model for both
@@ -12,10 +11,6 @@ interval [0,T], discretized into nᵀ steps of the same length.
 type HWBS
   "Number of steps per year"
   nʸ::Int
-  "Total number of steps"
-  nᵀ::Int
-  "Step width"
-  δt::Real
   "HW: initial interest rate"
   r₀::Real
   "HW: real world expected interest rate"
@@ -40,31 +35,12 @@ The input `df_spot` has at least two columns:
 - `:t`: maturities for spot rates.
 - `:spot`: spot rates at time zero for corresponding
     maturities in `df_spot[:t]`
-
-The maximum time `T` is calculated as `maximum(df_spot[:t])`.
 """
-function HWBS(p::Dict{Symbol, Real}, df_spot::DataFrame)
-  HWBS( convert(Int, round(p[:nʸ],0) ),
-        p[:r₀], p[:r∞], p[:a], p[:σ],
-        p[:S₀], p[:μ∞], p[:η],
-        p[:ρ],
-        df_spot)
-end
 
-function HWBS(nʸ::Int,
-              r₀::Real, r∞::Real, a::Real, σ::Real,
-              S₀::Real, μ∞::Real, η::Real,
-              ρ::Real,
-              df_spot::DataFrame)
-  δt = 1 / nʸ
-  nᵀ = maximum(df_spot[:t]) * nʸ
-  func_spot =
-    Spline1D( convert(Array, df_spot[:t]),
-              convert(Array, df_spot[:spot]))
-  # Durations and spot rates
-  prices =
-    DataFrame(t = collect(1:nᵀ) * δt,
-              spot = func_spot(collect(1:nᵀ) * δt))
+function HWBS(p::Dict{Symbol, Real}, df_spot::DataFrame)
+  prices = DataFrame()
+  prices[:t] = df_spot[:t]
+  prices[:spot] = df_spot[:spot]
   prices[:zb] = exp(-prices[:t] .* prices[:spot])
   # Instantaneous forward rates
   # Approximate last forward with previous forward
@@ -81,8 +57,8 @@ function HWBS(nʸ::Int,
   prices[:dforw] =
     vcat(tmp[1:end-1], tmp[end-1], tmp[end-1])
 
-  HWBS( nʸ, nᵀ, δt, df_spot[1,:spot], r∞, a, σ,
-        S₀, μ∞, η, ρ, prices)
+  HWBS( p[:nʸ], df_spot[1,:spot], p[:r∞], p[:a], p[:σ],
+        p[:S₀], p[:μ∞], p[:η], p[:ρ], prices)
 end
 
 function ev_rw(cm::HWBS, t::Real)
