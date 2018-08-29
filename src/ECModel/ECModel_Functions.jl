@@ -14,7 +14,7 @@ end
 
 function PLInsurance(input::DataFrame,
                      i::Int, n_scen::Int, is_net::Bool)
-  pl = PLInsurance(0, 0, 0, Array{Real}(n_scen), 0, 0, 0)
+  pl = PLInsurance(0, 0, 0, Array{Real}(undef, n_scen), 0, 0, 0)
   pl.ceded = (is_net ? input[i, :re_ceded] : 0)
   pl.premium = input[i, :premium] * (1 - pl.ceded)
   pl.costs =
@@ -24,7 +24,7 @@ function PLInsurance(input::DataFrame,
 end
 
 function PLTotal(n_scen)
-  PLTotal(Array{Real}(n_scen), 0, 0, 0)
+  PLTotal(Array{Real}(undef, n_scen), 0, 0, 0)
 end
 
 function BuInvestments(id::Symbol,
@@ -36,9 +36,9 @@ function BuInvestments(id::Symbol,
   gross = PLInvestments(invest_init, 0,
                         zeros(Real, n_scen), 0, 0, 0)
   net = deepcopy(gross)
-  for ins in bu_ins
-    gross.invest_bop += ins.gross.premium
-    net.invest_bop += ins.net.premium
+  for 𝑖𝑛𝑠 ∈ bu_ins
+    gross.invest_bop += 𝑖𝑛𝑠.gross.premium
+    net.invest_bop += 𝑖𝑛𝑠.net.premium
   end
   gross.costs = cost_ratio * gross.invest_bop
   net.costs = cost_ratio * net.invest_bop
@@ -56,9 +56,9 @@ function rand(gc::GaussCopula, n::Int)
   u = zeros(Float64, gc.n, n)
   x = zeros(Float64, gc.n, n)
   z = rand(MvNormal(zeros(Float64, gc.n), gc.Σ), n)
-  for i = 1:gc.n
-    u[i,:] = cdf(Normal(), z[i,:])
-    x[i,:] = quantile(gc.marginals[i], u[i,:])
+  for 𝑖 ∈ 1:gc.n
+    u[𝑖,:] = cdf.(Ref(Normal()), z[𝑖,:])
+    x[𝑖,:] = quantile.(Ref(gc.marginals[𝑖]), u[𝑖,:])
   end
   return x'
 end
@@ -87,7 +87,7 @@ end
 function profit!(pl::PLInvestments,
                  r_distr::Vector{Float64},
                  s::Real)
-  pl.profit = (r_distr .- s) * (pl.invest_bop) - pl.costs
+  pl.profit = (r_distr .- s) * (pl.invest_bop) .- pl.costs
   return pl
 end
 
@@ -103,8 +103,8 @@ end
 function profit!(pl::PLTotal, pl_bu::Array{ProfitLoss},
                  cap_init::Real, costs_fixed::Real, s::Real)
   fill!(pl.profit, 0.0)
-  for plbu in pl_bu
-    pl.profit .+= plbu.profit
+  for  𝑝𝑙𝑏𝑢 ∈ pl_bu
+    pl.profit .+= 𝑝𝑙𝑏𝑢.profit
   end
   pl.profit .+= (s * cap_init - costs_fixed)
   return pl
@@ -134,20 +134,20 @@ function initialize(insurance_input::DataFrame,
                     tau_kendall::Matrix{Real},
                     n_scen::Int)
   n_bu = nrow(insurance_input) + 1
-  bu = Array{BusinessUnit}(n_bu)
-  distr = Array{ContinuousUnivariateDistribution}(n_bu)
+  bu = Array{BusinessUnit}(undef, n_bu)
+  distr = Array{ContinuousUnivariateDistribution}(undef, n_bu)
 
-  for i in insurance_input[:ctr]
-    bu[i] =
-      BuInsurance(insurance_input[i, :id],
-                  insurance_input[i, :name],
-                  PLInsurance(insurance_input, i, n_scen, false),
-                  PLInsurance(insurance_input, i, n_scen, true))
-    lognorm_sd = sqrt(log(1 + insurance_input[i,:var_coeff]^2 ))
+  for 𝑖 ∈ insurance_input[:ctr]
+    bu[𝑖] =
+      BuInsurance(insurance_input[𝑖, :id],
+                  insurance_input[𝑖, :name],
+                  PLInsurance(insurance_input, 𝑖, n_scen, false),
+                  PLInsurance(insurance_input, 𝑖, n_scen, true))
+    lognorm_sd = sqrt(log(1 + insurance_input[𝑖,:var_coeff]^2 ))
     lognorm_mean =
-      log(insurance_input[i, :loss_ratio] * bu[i].gross.premium) -
+      log(insurance_input[𝑖, :loss_ratio] * bu[𝑖].gross.premium) -
       0.5lognorm_sd^2
-    distr[i] = LogNormal(lognorm_mean, lognorm_sd)
+    distr[𝑖] = LogNormal(lognorm_mean, lognorm_sd)
   end
 
   bu[invest_input[1, :ctr]] =
@@ -182,21 +182,24 @@ function project(ins_input::DataFrame,
 
   bu, gc = initialize(ins_input, inv_input, tau_kendall, n_scen)
   n_bu = length(bu)
+
   rand_distr = rand(gc, n_scen)
-  for i = 1:n_bu
-    for gross_net in [bu[i].gross, bu[i].net]
-      profit!(gross_net, rand_distr[:,i], s)
-      evaluate!(gross_net,α)
+  for 𝑖 ∈ 1:n_bu
+    for 𝑔𝑟𝑜𝑠𝑠_𝑛𝑒𝑡 ∈ [bu[𝑖].gross, bu[𝑖].net]
+      profit!(𝑔𝑟𝑜𝑠𝑠_𝑛𝑒𝑡, rand_distr[:,𝑖], s)
+      evaluate!(𝑔𝑟𝑜𝑠𝑠_𝑛𝑒𝑡,α)
     end
   end
   total = Total(PLTotal(n_scen), PLTotal(n_scen))
   ## get easier access for the following for loop
-  bu_gross = ProfitLoss[bu[i].gross for i in 1:n_bu]
-  bu_net = ProfitLoss[bu[i].net for i in 1:n_bu]
-  for (gn, bugn) in [(total.gross, bu_gross),
+  bu_gross = ProfitLoss[bu[𝑖].gross for 𝑖 ∈ 1:n_bu]
+  bu_net = ProfitLoss[bu[𝑖].net for 𝑖 ∈ 1:n_bu]
+  for (𝑔𝑛, 𝑏𝑢𝑔𝑛) ∈ [(total.gross, bu_gross),
                      (total.net, bu_net)]
-    profit!(gn, bugn, bu[end].init, costs_fixed, s)
-    evaluate!(gn,α)
+    profit!(𝑔𝑛, 𝑏𝑢𝑔𝑛, bu[end].init, costs_fixed, s)
+    evaluate!(𝑔𝑛,α)
   end
+
+
   return bu, total
 end

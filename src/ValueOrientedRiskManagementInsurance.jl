@@ -15,19 +15,19 @@ _Value-Oriented Risk Management of Insurance Companies_.
 
 The module consists of 4 distinct parts:
 
-- *SSTLife*: An extremely simplified example of the SST
+  - *SSTLife*: An extremely simplified example of the SST
 (Swiss Solvency Test) calculation for life insurance.
 The Swiss Solvency Test is the Swiss regulatory capital
 requirement.  The resulting monetary requirement is referred
 to as the "target capital" `ZK`.
-- *S2Life*: A simplified example of the S2 (Solvency 2)
+  - *S2Life*: A simplified example of the S2 (Solvency 2)
 calculation for non-life insurance. Solvency 2 is the new
 regulatory capital requirement in the European Union. The
 resulting monetary requirement is referred to as the
 "Solvency capital requirement" `SCR`.
-- *S2NonLife*: A simplified example of the S2 calculation
+  - *S2NonLife*: A simplified example of the S2 calculation
 for life insurance
-- *ECModel*: An extremely simplified example of an internal
+  - *ECModel*: An extremely simplified example of an internal
 economic capital model for non-life insurance. This model is
 used to illustrate some techniques used in value based
 management.
@@ -45,11 +45,14 @@ module ValueOrientedRiskManagementInsurance
 export es
 
 using Distributions
-using DataFrames, DataArrays
+using DataFrames#, DataArrays
+using LinearAlgebra
+using Random
 
 # import Base.show, Base.isequal
 # import Base.merge!
 import Distributions.rand
+import LinearAlgebra.⋅
 
 ## General functions --------------------------------------------
 ## Expected shortfall

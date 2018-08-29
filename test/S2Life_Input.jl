@@ -1,4 +1,4 @@
-using Base.Test
+using Test
 
 ## General ######################################################
 sp_2_cqs = Dict{AbstractString, Symbol}("AAA" => :cqs_0,
@@ -38,14 +38,14 @@ corr_mkt_raw =
    0.25  0.25  0.25  0.25  1.00  0.00;
    0.00  0.00  0.00  0.00  0.00  1.00]
 
-ind_adj = Array{Vector{Int}}(0)
+ind_adj = Array{Vector{Int}}(undef, 0)
 push!(ind_adj, [1,2], [1,3], [1,4], [2,1], [3,1], [4,1])
 
 function corrmkt(raw::Matrix, ind_adj, updown::Symbol)
   a = (updown == :up ? 0.0 : 0.5)
   corr = deepcopy(raw)
-  for pair in ind_adj
-    corr[pair[1], pair[2]]= a
+  for 𝑝𝑎𝑖𝑟 ∈ ind_adj
+    corr[𝑝𝑎𝑖𝑟[1], 𝑝𝑎𝑖𝑟[2]]= a
   end
   return corr
 end

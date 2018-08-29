@@ -12,12 +12,12 @@ function IGCost(df_cost)
 end
 
 function IGStock(cap_mkt::CapMkt, mv_0, alloc, cost)
-  investments = Array{InvestStock}(0)
-  for i = 1:length(alloc.name)
+  investments = Array{InvestStock}(undef, 0)
+  for 𝑖 ∈ 1:length(alloc.name)
     push!(investments,
-          InvestStock(alloc.name[i],
+          InvestStock(alloc.name[𝑖],
                       cap_mkt.stock,
-                      mv_0 * alloc.total[1] * alloc.all[1,i],
+                      mv_0 * alloc.total[1] * alloc.all[1,𝑖],
                       zeros(Float64, size(alloc.all, 1))))
   end
   IGStock(investments, mv_0 * alloc.total[1],
@@ -26,15 +26,15 @@ function IGStock(cap_mkt::CapMkt, mv_0, alloc, cost)
 end
 
 function IGCash(cap_mkt::CapMkt, mv_0, alloc, cost)
-  investments = Array{InvestCash}(0)
-  for i = 1:length(alloc.name)
+  investments = Array{InvestCash}(undef, 0)
+  for 𝑖 ∈ 1:length(alloc.name)
     push!(investments,
-          InvestCash(alloc.name[i],
+          InvestCash(alloc.name[𝑖],
                      cap_mkt.rfr,
-                     mv_0 * alloc.total[1] * alloc.all[1,i],
+                     mv_0 * alloc.total[1] * alloc.all[1,𝑖],
                      zeros(Float64, size(alloc.all, 1)),
-                     alloc.lgd[i],
-                     alloc.cqs[i]))
+                     alloc.lgd[𝑖],
+                     alloc.cqs[𝑖]))
   end
   IGCash(investments, mv_0 * alloc.total[1],
          zeros(Float64, size(alloc.all, 1)), alloc,
@@ -49,14 +49,14 @@ function InvPort(t_0,
                  costs::Dict{Symbol, DataFrame}
                  )
   igs = Dict{Symbol, InvestGroup}()
-  for ig_symb in collect(keys(allocs))
+  for 𝑖𝑔_𝑠𝑦𝑚𝑏 ∈ collect(keys(allocs))
     ## ig_symb are the symbols corresponding to the
     ## types of investment groups: :IGCash, IGStock
     merge!(igs,
-           Dict(ig_symb => eval(ig_symb)(cap_mkt,
-                                         mv_0,
-                                         allocs[ig_symb],
-                                         IGCost(costs[ig_symb])
+           Dict(𝑖𝑔_𝑠𝑦𝑚𝑏 => eval(𝑖𝑔_𝑠𝑦𝑚𝑏)(cap_mkt,
+                                        mv_0,
+                                        allocs[𝑖𝑔_𝑠𝑦𝑚𝑏],
+                                        IGCost(costs[𝑖𝑔_𝑠𝑦𝑚𝑏])
                                          )))
   end
   return(InvPort(t_0,                  ## start of projection
@@ -92,8 +92,8 @@ function ModelPoint(n, t_0, t_start,
   prob[:px] = 1 .- prob[:qx] - prob[:sx]
   lx_boy = zeros(Float64, dur)
   β = DataFrame()
-  for name in names(product.β)
-    β[name] = n * ins_sum * product.β[s_future, name]
+  for 𝑛𝑎𝑚𝑒 ∈ names(product.β)
+    β[𝑛𝑎𝑚𝑒] = n * ins_sum * product.β[s_future, 𝑛𝑎𝑚𝑒]
   end
   β[:prem] *= product.prem_norm
   β[:sx] *= product.prem_norm
@@ -116,8 +116,8 @@ function ModelPoint(n, t_0, t_start,
                     β,
                     λ_price)
   tpg_price = zeros(Float64, dur)
-  for τ = 1:dur
-    tpg_price[τ] = tpg(τ,
+  for 𝑡 ∈ 1:dur
+    tpg_price[𝑡] = tpg(𝑡,
                        rfr_price,
                        product.prob[s_future, :],
                        β,
@@ -134,28 +134,28 @@ end
 function LiabIns(t_0::Int, prob_be, λ_be,
                  cost_infl, product, df_port)
   n = nrow(df_port)
-  mps = Array{ModelPoint}(0)
+  mps = Array{ModelPoint}(undef, 0)
   dur = 0
-  for d = 1:n
-    push!(mps, ModelPoint(df_port[d, :n],
+  for 𝑑 ∈ 1:n
+    push!(mps, ModelPoint(df_port[𝑑, :n],
                           t_0,
-                          df_port[d, :t_start],
+                          df_port[𝑑, :t_start],
                           prob_be,
-                          df_port[d, :sx_be_fac],
+                          df_port[𝑑, :sx_be_fac],
                           λ_be,
-                          cost_infl[d],
-                          df_port[d, :bonus_rate_hypo],
+                          cost_infl[𝑑],
+                          df_port[𝑑, :bonus_rate_hypo],
                           product,
-                          df_port[d, :ins_sum],
-                          df_port[d, :pension_contract]))
-    dur = max(dur, mps[d].dur)
+                          df_port[𝑑, :ins_sum],
+                          df_port[𝑑, :pension_contract]))
+    dur = max(dur, mps[𝑑].dur)
   end
   gc = zeros(Float64, dur)
-  for mp in mps
-    mp.gc = zeros(Float64, dur)
-    mp.gc[1:mp.dur] +=
-      vcat(1, cumprod(mp.prob[1:(mp.dur-1), :px]))
-    gc +=  mp.n * mp.gc
+  for 𝑚𝑝 ∈ mps
+    𝑚𝑝.gc = zeros(Float64, dur)
+    𝑚𝑝.gc[1:𝑚𝑝.dur] +=
+      vcat(1, cumprod(𝑚𝑝.prob[1:(𝑚𝑝.dur-1), :px]))
+    gc +=  𝑚𝑝.n * 𝑚𝑝.gc
   end
   gc /= gc[1]
   Δgc = diff(vcat(gc, 0))
@@ -184,9 +184,9 @@ function Debt(t_0, df_debt::DataFrame)
 end
 
 function LiabOther(t_0, df_debts::DataFrame)
-  subord = Array{Debt}(nrow(df_debts))
-  for d = 1:nrow(df_debts)
-    subord[d] = Debt(t_0, df_debts[d,:])
+  subord = Array{Debt}(undef, nrow(df_debts))
+  for 𝑑 ∈ 1:nrow(df_debts)
+    subord[𝑑] = Debt(t_0, df_debts[𝑑,:])
   end
   return LiabOther(subord)
 end
@@ -215,7 +215,6 @@ function Projection(liabs, tax_rate, tax_credit_0)
     l_other = zeros(Float64, dur),
     profit = zeros(Float64, dur),
     tax = zeros(Float64, dur),
-    profit = zeros(Float64, dur),
     divid = zeros(Float64, dur),
     gc = zeros(Float64, dur),        ## not affecting profit/loss
     Δtpg = zeros(Float64, dur),      ## not real cf, affects p/l
@@ -245,12 +244,12 @@ function Projection(tax_rate,
                     liabs_other::LiabOther,
                     dyn::Dynamic)
   proj = Projection(liabs, tax_rate, tax_credit_0)
-  for τ = 1:liabs.dur
-    for ig in [:IGCash, :IGStock]
-      proj.fixed_cost_gc[τ] +=
-        invs.igs[ig].cost.abs[τ] *
-        invs.igs[ig].cost.cum_infl_abs[τ] *
-        liabs.gc[τ]
+  for 𝑡 ∈ 1:liabs.dur
+    for 𝑖𝑔 ∈ [:IGCash, :IGStock]
+      proj.fixed_cost_gc[𝑡] +=
+        invs.igs[𝑖𝑔].cost.abs[𝑡] *
+        invs.igs[𝑖𝑔].cost.cum_infl_abs[𝑡] *
+        liabs.gc[𝑡]
     end
   end
   l_other = deepcopy(liabs_other)
@@ -259,8 +258,8 @@ function Projection(tax_rate,
   proj.cf[:,:gc] = liabs.Δgc * (proj.val_0[1,:invest] -
                                   proj.val_0[1,:tpg] -
                                   proj.val_0[1,:l_other])
-  for τ = 1:liabs.dur
-    project!(τ, cap_mkt, invs, liabs, l_other, dyn, proj)
+  for 𝑡 = 1:liabs.dur
+    project!(𝑡, cap_mkt, invs, liabs, l_other, dyn, proj)
   end
   valbonus!(cap_mkt.rfr.x, proj)
   valcostprov!(cap_mkt.rfr.x, invs, proj)

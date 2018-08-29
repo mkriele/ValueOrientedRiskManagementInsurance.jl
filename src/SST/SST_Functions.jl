@@ -59,8 +59,8 @@ function value(t::Int,
                rf::RiskFactor,
                cap_mkt::SSTCapMkt)
   val = 0.0
-  for asset in assts
-    val += value(t, asset, x, rf, cap_mkt)
+  for 𝑎𝑠𝑠𝑒𝑡 ∈ assts
+    val += value(t, 𝑎𝑠𝑠𝑒𝑡, x, rf, cap_mkt)
   end
   return val
 end
@@ -81,10 +81,10 @@ function value(t::Int,
   x_spot = cap_mkt.spot[1:T] + x[1:T]
   x_mort = x[liabs.index_mort]
   val = 0.0
-  for τ in 1:length(liabs.B_PX)
+  for 𝜏 ∈ 1:length(liabs.B_PX)
     val +=
-      prod(1 .- liabs.qx[1:τ] .* x_mort) *
-      liabs.B_PX[τ] / (1 + x_spot[τ])^τ
+      prod(1 .- liabs.qx[1:𝜏] .* x_mort) *
+      liabs.B_PX[𝜏] / (1 + x_spot[𝜏])^𝜏
   end
   if t != 0
     val *= (1 + cap_mkt.spot[t] + x[t])^t
@@ -123,11 +123,11 @@ function srtk(shift::Int,
              cap_mkt::SSTCapMkt)
   x = deepcopy(rf.x0)
   n = length(x)
-  rtk_shift = Array{Float64}(n)
-  for i = 1:n
-    x[i] += shift * rf.h[i]
-    rtk_shift[i] = rtk(1, assets, liabs, x, rf, cap_mkt)
-    x[i] -= shift * rf.h[i]  ## restore old value for y[i]
+  rtk_shift = Array{Float64}(undef, n)
+  for 𝑖 ∈ 1:n
+    x[𝑖] += shift * rf.h[𝑖]
+    rtk_shift[𝑖] = rtk(1, assets, liabs, x, rf, cap_mkt)
+    x[𝑖] -= shift * rf.h[𝑖]  ## restore old value for y[i]
   end
   return rtk_shift
 end
@@ -146,23 +146,23 @@ function srtk(shift_1::Int,
              cap_mkt::SSTCapMkt)
   x = deepcopy(rf.x0)
   n = length(x)
-  rtk_shift_shift = Array{Float64}(n, n)
-  for i = 1:n
-    for k = 1:n
-      x[i] += shift_1 * rf.h[i]
-      x[k] += shift_2 * rf.h[k]
-      rtk_shift_shift[i, k] =
+  rtk_shift_shift = Array{Float64}(undef, n, n)
+  for 𝑖 ∈ 1:n
+    for 𝑘 ∈ 1:n
+      x[𝑖] += shift_1 * rf.h[𝑖]
+      x[𝑘] += shift_2 * rf.h[𝑘]
+      rtk_shift_shift[𝑖, 𝑘] =
         rtk(1, assets, liabs, x, rf, cap_mkt)
-      x[i] -= shift_1 * rf.h[i]  ## restore old value for x[i]
-      x[k] -= shift_2 * rf.h[k]  ## restore old value for x[i]
+      x[𝑖] -= shift_1 * rf.h[𝑖]  ## restore old value for x[𝑖]
+      x[𝑘] -= shift_2 * rf.h[𝑘]  ## restore old value for x[𝑘]
     end
   end
   return rtk_shift_shift
 end
 
 Δ(rf::RiskFactor) =
-  Float64[rf.add[i] ?  rf.h[i] : rf.x0[i] * rf.h[i]
-          for i = 1:length(rf.x0)]
+  Float64[rf.add[𝑖] ?  rf.h[𝑖] : rf.x0[𝑖] * rf.h[𝑖]
+          for 𝑖 ∈ 1:length(rf.x0)]
 
 """
 `delta(assets::Vector{Asset}, liabs::Liabilities, rf::RiskFactor,
@@ -194,18 +194,18 @@ function gammamatrix(assets::Vector{Asset},
   rtk_dd = srtk(DOWN, DOWN, assets, liabs, rf, cap_mkt)
   Γ_diag =
     (srtk(UP, assets, liabs, rf, cap_mkt) +
-       srtk(DOWN, assets, liabs, rf, cap_mkt) -
+       srtk(DOWN, assets, liabs, rf, cap_mkt) .-
        2rtk(1,assets, liabs, rf.x0, rf, cap_mkt)) ./ (Δx .* Δx)
-  Γ = Array{Float64}(length(rf.x0), length(rf.x0))
-  for i = 1:length(rf.x0)
-    for k = 1:(i-1)
-      Γ[i,k] = (rtk_uu[i,k] -
-                  rtk_ud[i,k] -
-                  rtk_du[i,k] +
-                  rtk_dd[i,k]) / (4 * Δx[i] * Δx[k])
-      Γ[k,i] = Γ[i,k]
+  Γ = Array{Float64}(undef, length(rf.x0), length(rf.x0))
+  for 𝑖 ∈ 1:length(rf.x0)
+    for 𝑘 ∈ 1:(𝑖-1)
+      Γ[𝑖,𝑘] = (rtk_uu[𝑖,𝑘] -
+                  rtk_ud[𝑖,𝑘] -
+                  rtk_du[𝑖,𝑘] +
+                  rtk_dd[𝑖,𝑘]) / (4 * Δx[𝑖] * Δx[𝑘])
+      Γ[𝑘,𝑖] = Γ[𝑖,𝑘]
     end
-    Γ[i,i] = Γ_diag[i]
+    Γ[𝑖,𝑖] = Γ_diag[𝑖]
   end
   return Γ
 end
@@ -231,11 +231,11 @@ function rΔrtk(n_scen::Int,
   r_Δx = rand(MvNormal(zeros(Float64, length(x_index)),
                        rf.Σ[x_index, x_index]),
               n_scen)
-  r_Δrtk = Array{Float64}(n_scen)
+  r_Δrtk = Array{Float64}(undef, n_scen)
   δ = delta(assets, liabs, rf, cap_mkt)[x_index]
   Γ = gammamatrix(assets, liabs, rf, cap_mkt)[x_index, x_index]
-  for mc in 1:n_scen
-    r_Δrtk[mc] = Δrtk(r_Δx[:, mc], δ, Γ)
+  for 𝑚𝑐 ∈ 1:n_scen
+    r_Δrtk[𝑚𝑐] = Δrtk(r_Δx[:, 𝑚𝑐], δ, Γ)
   end
   return r_Δrtk
 end
@@ -249,11 +249,11 @@ function aggrstress(stress::Stress, r_Δrtk_no_stress)
   r_Δrtk = deepcopy(r_Δrtk_no_stress)
   n_scen = length(r_Δrtk)
   i = 0
-  for scen = 1:stress.n
-    if stress.target[scen]
-      n_adj = floor(Integer, n_scen * stress.prob[scen])
-      for j = 1:n_adj
-        r_Δrtk[i + j] += min(0, stress.Δrtk[scen])
+  for 𝑠𝑐𝑒𝑛 ∈ 1:stress.n
+    if stress.target[𝑠𝑐𝑒𝑛]
+      n_adj = floor(Integer, n_scen * stress.prob[𝑠𝑐𝑒𝑛])
+      for 𝑗 ∈ 1:n_adj
+        r_Δrtk[i + 𝑗] += min(0, stress.Δrtk[𝑠𝑐𝑒𝑛])
       end
       i += n_adj
     end

@@ -2,7 +2,7 @@ export GaussCopula, ProfitLoss, PLInsurance, PLInvestments,
 PLTotal, BusinessUnit, BuInsurance, BuInvestments, Total
 
 "Gaussian copula"
-type GaussCopula
+mutable struct GaussCopula
   "`Int`: Number of marginal distributions"
   n::Int
   "`Array{Float64,2} `: Correlation matrix"
@@ -17,7 +17,7 @@ abstract type ProfitLoss end
 
 "Profit loss account for the insurance result from a line
 of business (lob)"
-type PLInsurance <: ProfitLoss
+mutable struct PLInsurance <: ProfitLoss
   "`Real`: Premium for lob"
   premium::Real
   "`Real`: Administration costs of lob"
@@ -35,7 +35,7 @@ type PLInsurance <: ProfitLoss
 end
 
 "Profit loss account for the investment result result"
-type PLInvestments <: ProfitLoss
+mutable struct PLInvestments <: ProfitLoss
   "`Real`: Invested funds beginning of period"
   invest_bop::Real
   "`Real`: Administration costs"
@@ -51,7 +51,7 @@ type PLInvestments <: ProfitLoss
 end
 
 "Profit loss account for the aggregated insurance company"
-type PLTotal <: ProfitLoss
+mutable struct PLTotal <: ProfitLoss
   "`Vector{Real}`: Profit of company"
   profit::Vector{Real}
   "Real`: Expected profit of company"
@@ -66,7 +66,7 @@ end
 abstract type BusinessUnit end
 
 "Business unit: Line of business"
-type BuInsurance <: BusinessUnit
+mutable struct BuInsurance <: BusinessUnit
   "`AbstractString`:  id of business unit"
   id::Symbol
   "`AbstractString`:  Name of business unit"
@@ -80,7 +80,7 @@ type BuInsurance <: BusinessUnit
 end
 
 "Business unit: Investments"
-type BuInvestments <: BusinessUnit
+mutable struct BuInvestments <: BusinessUnit
   "`AbstractString`:  id of business unit"
   id::Symbol
   "`AbstractString`:  Name of business unit"
@@ -96,7 +96,7 @@ type BuInvestments <: BusinessUnit
 end
 
 "Total company result"
-type Total
+mutable struct Total
   "`PLTotal`: profit loss account for company
   (gross of reinsurance)"
   gross::PLTotal

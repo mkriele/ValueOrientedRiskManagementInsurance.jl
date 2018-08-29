@@ -11,7 +11,7 @@ const NET = 2
 abstract type S2Module end
 
 "Dummy type for those S2 modules that have not been implemented"
-type S2NotImplemented <: S2Module
+mutable struct S2NotImplemented <: S2Module
   "`Vector{Float64}`: Gross and net SCR"
   scr::Vector{Float64}
 end
@@ -41,7 +41,7 @@ const S2NonLife = S2NotImplemented
 
 "Projection parameters for S2-calculations without
 S2 calibration parameters"
-type ProjParam
+mutable struct ProjParam
   "`Int`: Year in which projection starts"
   t_0::Int
   "`Int`: Year in which projection ends"
@@ -66,7 +66,7 @@ end
 
 ## solvency 2 market risk =======================================
 "Solvency 2 market risk: interest rate risk"
-type S2MktInt <: S2Module
+mutable struct S2MktInt <: S2Module
   "`Symbol`: Name of object type to be shocked"
   shock_object::Symbol
   "`Dict{Symbol, Any}`: Interest rate shocks"
@@ -82,7 +82,7 @@ type S2MktInt <: S2Module
 end
 
 "Solvency 2 market risk: equity risk"
-type S2MktEq <: S2Module
+mutable struct S2MktEq <: S2Module
   "`Symbol`: Name of object type to be shocked"
   shock_object::Symbol
   "`Dict{Symbol, Symbol}`: Equity type for each invested stock"
@@ -98,7 +98,7 @@ type S2MktEq <: S2Module
 end
 
 "Solvency 2 market risk"
-type S2Mkt <: S2Module
+mutable struct S2Mkt <: S2Module
   "`Vector{S2Module}`: Sub-modules for market risk"
   mds::Vector{S2Module}
   "`Matrix{Float64}`: Correlation matrix if upwards shock was
@@ -113,7 +113,7 @@ end
 
 ## solvency 2 default risk ======================================
 "Solvency 2 default risk of type 1"
-type S2Def1 <: S2Module
+mutable struct S2Def1 <: S2Module
   "`Vector{Float64}`: Total loss given default per rating"
   tlgd::Vector{Float64}
   "`Vector{Float64}`: Squared loss given default per rating"
@@ -131,7 +131,7 @@ type S2Def1 <: S2Module
 end
 
 "Solvency 2 default risk"
-type S2Def <: S2Module
+mutable struct S2Def <: S2Module
   "`Vector{S2Module}`: Sub-modules for default risk"
   mds::Vector{S2Module}
   "`Matrix{Float64}`: Correlation matrix for default risk"
@@ -143,7 +143,7 @@ end
 ## solvency 2 life risk =========================================
 "Solvency 2 life risk: biometric risks: mortality, longevity,
 surrender"
-type S2LifeBio <: S2Module
+mutable struct S2LifeBio <: S2Module
   "`Symbol`: Name of object type to be shocked"
   shock_object::Symbol
   "`Dict{Symbol, Any}`: biometric shocks"
@@ -162,7 +162,7 @@ end
 
 
 "Solvency 2 life risk: expense risk"
-type S2LifeCost <: S2Module
+mutable struct S2LifeCost <: S2Module
   "`Symbol`: Name of object type to be shocked"
   shock_object::Symbol
   "`Dict{Symbol, Any}`: biometric shocks"
@@ -177,7 +177,7 @@ type S2LifeCost <: S2Module
 end
 
 "Solvency 2 life risk"
-type S2Life <: S2Module
+mutable struct S2Life <: S2Module
   "`Vector{S2Module}`: Sub-modules for life risk"
   mds::Vector{S2Module}
   "`Matrix{Float64}`: Correlation matrix for life risk"
@@ -188,7 +188,7 @@ end
 
 ## solvency 2 operational risk ==================================
 "Solvency 2 operational risk"
-type S2Op <: S2Module
+mutable struct S2Op <: S2Module
   "`Dict{Symbol, Float64}`: Factors for SCR calculation"
   fac::Dict{Symbol, Float64}
   "`Float64`: Earned premium (previous year)"
@@ -212,7 +212,7 @@ end
 
 ## solvency 2 total =============================================
 "Solvency 2 (total)"
-type S2 <: S2Module
+mutable struct S2 <: S2Module
   "`Vector{S2Module}`: Solvency 2 modules witout op-risk "
   mds::Vector{S2Module}
   "`DataFrame`: Unshocked best estimate balance sheet"

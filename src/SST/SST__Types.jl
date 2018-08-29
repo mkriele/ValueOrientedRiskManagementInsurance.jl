@@ -2,7 +2,7 @@ export Stress, Asset, Liabilities, StockIndex, ZeroBond,
        RiskFactor, SSTCapMkt
 
 "Stress scenario"
-type Stress
+mutable struct Stress
   "`Int`: Number of scenarios"
   n::Int
   "`Vector{AbstractString}`: Name of scenario"
@@ -18,7 +18,7 @@ type Stress
 end
 
 "Capital market"
-type SSTCapMkt
+mutable struct SSTCapMkt
   "`Vector{Float64}`: Risk-free spot rate curve"
   spot::Vector{Float64}
   "`Float64`: Expected relative increase of stock per year"
@@ -29,7 +29,7 @@ end
 abstract type Asset end
 
 "Zero bond (an instance of an asset)"
-type ZeroBond <: Asset
+mutable struct ZeroBond <: Asset
   "`Float64`: Nominal value of the zero bond"
   nom::Float64
   "`Int`: Time to maturity (full years)"
@@ -39,7 +39,7 @@ type ZeroBond <: Asset
 end
 
 "Investment in stock"
-type StockIndex <: Asset
+mutable struct StockIndex <: Asset
   "`Float64`: Initial value of investment"
   nom::Float64
   "`Int`: Index of this risk factor"
@@ -47,7 +47,7 @@ type StockIndex <: Asset
 end
 
 "Liability portfolio consisting of a single insurance contract"
-type Liabilities
+mutable struct Liabilities
   "`Vector{Float64}`: Survival benefits"
   B_PX::Vector{Float64}
   "`Vector{Float64}`: Mortality probabilities"
@@ -57,7 +57,7 @@ type Liabilities
 end
 
 "Risk factor"
-type RiskFactor
+mutable struct RiskFactor
   "`Array{Float64,2}`: Covariance matrix for risk factors"
   Σ::Array{Float64,2}
   "`Vector{Float64}`: Expected value of risk factor: `x0 = E(x)`"

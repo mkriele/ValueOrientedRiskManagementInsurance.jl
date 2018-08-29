@@ -1,6 +1,6 @@
 using ValueOrientedRiskManagementInsurance
 using DataFrames
-using Base.Test
+using Test
 using Distributions
 
 println("start NonLife.jl...")
@@ -18,7 +18,7 @@ end
 """
    dr = ( θ(t)-ar ) dt + σ dW
 """
-type HullWhite
+mutable struct HullWhite
   t₀::Real
   T::Real
   δt::Real
@@ -43,27 +43,27 @@ function r(rstart::Real, k::Int, Δk::Int, hw::HullWhite)
   μ =
     exp(-hw.a*Δk*hw.δt)/hw.a *
     (hw.a * rstart  +
-     sum([(exp(-hw.a*j*hw.δt) - exp(-hw.a*(j-1)*hw.δt)) *
-           hw.θ[k+j-1] for j in 1:Δk]))
+     sum([(exp(-hw.a*𝑗*hw.δt) - exp(-hw.a*(𝑗-1)*hw.δt)) *
+           hw.θ[k+𝑗-1] for 𝑗 ∈ 1:Δk]))
   std = hw.σ * √( (1-2exp(-2hw.a*Δk*hw.δt)) / (2hw.a) )
   Normal(μ, std)
 end
 
 nllobs = [:fire, :liab, :theft]
 n_nl = length(nllobs)
-nl_names = [ucfirst(string(nllobs[i])) for i in 1:n_nl]
+nl_names = [ucfirst(string(nllobs[𝑖])) for 𝑖 ∈ 1:n_nl]
 df_claims = Vector(n_nl)
 claims = Vector(n_nl)
 res = Vector(n_nl)
 β = Vector(n_nl)
 
 claimpath = "test/NonLife_Input_Claims_"
-for i = 1:n_nl
-  df_claims[i] =
-    readtable(claimpath * nl_names[i]  * ".csv",
+for 𝑖 ∈ 1:n_nl
+  df_claims[𝑖] =
+    CSV.read(claimpath * nl_names[𝑖]  * ".csv",
               header = false)
-  res[i] = Mack(df_claims[i])
-  β[i] = res[i].futureclaims / sum(res[i].futureclaims)
+  res[𝑖] = Mack(df_claims[𝑖])
+  β[𝑖] = res[𝑖].futureclaims / sum(res[𝑖].futureclaims)
 end
 
 

@@ -80,7 +80,7 @@ select_lob_names = [:fire, :liability, :misc]
 
 df_lobs = DataFrame(
   name = select_lob_names,              # lobs of X-AG
-  index = findin(lob_names, select_lob_names), # ids of lobs
+  index = findall( (in)(select_lob_names), lob_names), # ids of lobs
   prem_gross_w_py = [500., 250.,  50.], # gross written prem. PY
   prem_gross_w_cy = [600., 300., 100.], # gross written prem. CY
   upr_py = [50., 20., 5.],              # unearned prem. res. PY

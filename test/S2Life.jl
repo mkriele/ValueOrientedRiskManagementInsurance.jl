@@ -1,6 +1,8 @@
 using ValueOrientedRiskManagementInsurance
 using Distributions
 using DataFrames
+using LinearAlgebra
+
 include("S2Life_Input.jl")
 include("Life_Input.jl")
 #################################################################
@@ -9,7 +11,7 @@ println("Start S2Life.jl")
 t_0 = 0
 cap_mkt = CapMkt(deepcopy(proc_stock), deepcopy(proc_rfr))
 
-invs_par = Array{Any}(0)
+invs_par = Array{Any}(undef, 0)
 push!(invs_par, mv_total_0, allocs, λ_invest)
 invs = InvPort(t_0, T, cap_mkt, invs_par...)
 product = Product(rfr_price, prob_price, β, λ_price)
@@ -36,13 +38,18 @@ invs.igs[:IGStock].mv
 
 println("Initial balance sheet:")
 println(proj.val_0)
-println("Modified Assets      : $(round(s2.invest_mod, 2))")
-println("Modified Liabilities : $(round(s2.liabs_mod, 2))")
-println("Risk Margin          : $(round(s2.risk_margin, 2))")
+println("Modified Assets      : $(round(s2.invest_mod,
+                                        digits = 2))")
+println("Modified Liabilities : $(round(s2.liabs_mod,
+                                        digits = 2))")
+println("Risk Margin          : $(round(s2.risk_margin,
+                                        digits = 2))")
 println("Available capital    : $(round(s2.invest_mod -
                                         s2.liabs_mod -
-                                        s2.risk_margin, 2))")
-println("SCR:                 : $(round(s2.scr, 2))")
-println("SCR-Ratio            : $(round(100 *s2.scr_ratio, 1))%")
+                                        s2.risk_margin,
+                                        digits = 2))")
+println("SCR:                 : $(round(s2.scr, digits = 2))")
+println("SCR-Ratio            : $(round(100 *s2.scr_ratio,
+                                        digits = 1))%")
 
 println("End S2Life.jl")

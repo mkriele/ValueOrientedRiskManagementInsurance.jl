@@ -24,7 +24,7 @@ abstract type DetermProcess <: Process end
 
 "A deterministic process representing a stock index. Additional
 objects"
-type Stock <: DetermProcess
+mutable struct Stock <: DetermProcess
   "`Float64`: Initial value of `x`"
   x_0::Float64
   "`Vector{Float64}`: Process value for each Year"
@@ -35,7 +35,7 @@ type Stock <: DetermProcess
 end
 
 "A deterministic process representing a short rate"
-type RiskFreeRate <: DetermProcess
+mutable struct RiskFreeRate <: DetermProcess
   "`Vector{Float64}`: Process value for each Year"
   x::Vector{Float64}
   "`Float64`: Yield from process during year `t_0`
@@ -46,7 +46,7 @@ end
 "A collection of `Process` objects which represents a
 capital market. Currently we only have two deterministic
 processes, `stock::Stock` and `rfr::RiskFreeRate`."
-type CapMkt
+mutable struct CapMkt
   "`Stock`: Process describing a single deterministic stock"
   stock::Stock
   "`RiskFreeRate`: Process describing the (deterministic) risk
@@ -64,7 +64,7 @@ dict_ig = Dict{Symbol, Symbol}(:IGStock => :InvestStock,
                                :IGCash => :InvestCash)
 
 "`Invest` object associated with a `Stock` process"
-type InvestStock <: Invest
+mutable struct InvestStock <: Invest
   "`Symbol`:  Name of investment"
   name::Symbol
   "`Stock <: DetermProcess`: Associated stock process"
@@ -76,7 +76,7 @@ type InvestStock <: Invest
 end
 
 "`Invest` object associated with a `RiskFreeRate` process"
-type InvestCash <: Invest
+mutable struct InvestCash <: Invest
   "`Symbol`:  Name of investment"
   name::Symbol
   "`RiskFreeRate <: DetermProcess`: Associated cash process"
@@ -95,7 +95,7 @@ end
 abstract type InvestGroup  end
 
 "Allocation of investments within an `InvestGroup` object `ig`"
-type Alloc  ## asset allocation for each year
+mutable struct Alloc  ## asset allocation for each year
   "`Vector{Symbol}`: Name of investments within invest group
   (the indices correpond to the indices of `ig.investments`)"
   name::Vector{Symbol}
@@ -113,7 +113,7 @@ type Alloc  ## asset allocation for each year
 end
 
 "Investment costs for an `InvestGroup` object `ig`"
-type IGCost
+mutable struct IGCost
   "`Vector{Float64}`: Relative costs per year incl. inflation"
   rel::Vector{Float64}
   "`Vector{Float64}`: Absolute costs per year incl. inflation"
@@ -131,7 +131,7 @@ type IGCost
 end
 
 "Invest Group for `Invest` object `InvestStock`"
-type IGStock <: InvestGroup
+mutable struct IGStock <: InvestGroup
   "`Vector{InvestStock}`: Invest objects of the same type"
   investments::Vector{InvestStock}
   "`Float64`: Initial total market value of invest group"
@@ -145,7 +145,7 @@ type IGStock <: InvestGroup
 end
 
 "Invest Group for `Invest` object `InvestCash`"
-type IGCash <: InvestGroup
+mutable struct IGCash <: InvestGroup
   "`Vector{InvestCash}`: Invest objects of the same type"
   investments::Vector{InvestCash}
   "`Float64`: Initial total market value of invest group"
@@ -159,7 +159,7 @@ type IGCash <: InvestGroup
 end
 
 "Investment portfolio"
-type InvPort
+mutable struct InvPort
   "`Int`:  Year in which projection starts"
   t_0::Int
   "`Float64`: Initial market value"
@@ -180,7 +180,7 @@ end
 ## insurance liabilities ----------------------------------------
 
 "Life insurance product / tariff"
-type Product
+mutable struct Product
   "`Int`: Duration of product"
   dur::Int
   "`Vector{Float64}`: Pricing discount rate for each year"
@@ -209,13 +209,13 @@ biometric parameters
   real time t:     t_start      t_0
   product time s:  0            s_0
                    |------------|-------------------|-----------
-                                \-------------------/
+                                |-------------------|
                                          dur
-                   \--------------------------------/
+                   |--------------------------------|
                               product.dur
 ```
 """
-type ModelPoint
+mutable struct ModelPoint
   "`Int`:  Number of contracts in model point"
   n::Int
   "`Int`:  Year in which contract has been taken out"
@@ -255,7 +255,7 @@ type ModelPoint
 end
 
 "Liability portfolio"
-type LiabIns
+mutable struct LiabIns
   "`Int`: Number of model points"
   n::Int
   "`Int`: Year in which projection starts"
@@ -273,7 +273,7 @@ end
 ## other liabilities --------------------------------------------
 
 "Debt issued by the company"
-type Debt
+mutable struct Debt
   "`Symbol`: Name of this loan"
   name::Symbol
   "`Int`: Time at which loan has been taken"
@@ -291,7 +291,7 @@ type Debt
 end
 
 "Portfolio of other liabilities"
-type LiabOther
+mutable struct LiabOther
   "`Vector{Debt}`:  Vector with subordinated debt"
   subord::Vector{Debt}
 end
@@ -299,7 +299,7 @@ end
 ## dynamics -----------------------------------------------------
 
 "Dynamic projection parameters for a `Projection` object"
-type Dynamic
+mutable struct Dynamic
   "`Float64`: Bonus factor"
   bonus_factor::Float64
   "`Float64`: Desired surplus ratio"
@@ -311,7 +311,7 @@ end
 ## cashflow projection ------------------------------------------
 
 "Projection of a life insurer"
-type Projection
+mutable struct Projection
   "`Int`: Start of projection"
   t_0::Int
   "`Int`: Length of projection"

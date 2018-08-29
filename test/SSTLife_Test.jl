@@ -7,8 +7,8 @@ include("SSTLife.jl")
 
 println("Start SSTLife test")
 
-@test round(rtk_start, 2) ≈ 158.58
-@test round(tc, 2) ≈ 147.60
-@test round(sst_ratio, 4) ≈ 1.0744
+@test round(rtk_start, digits = 2) ≈ 158.58
+@test round(tc, digits = 2) ≈ 147.60
+@test round(sst_ratio, digits = 4) ≈ 1.0744
 
 println("End SSTLife test")

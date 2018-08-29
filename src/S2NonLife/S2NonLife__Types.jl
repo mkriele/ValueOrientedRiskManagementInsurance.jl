@@ -3,7 +3,7 @@ export NLLob, PY, CY, NY
 const PY, CY, NY = 1, 2, 3   ## previous, current, next year
 
 "Line of Business (Non-Life)"
-type NLLob
+mutable struct NLLob
   "`AbstractString`: Name of the line of business"
   name::Symbol
   "`Int`: Identifying index of the line of business"

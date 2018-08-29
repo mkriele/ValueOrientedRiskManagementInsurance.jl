@@ -91,11 +91,11 @@ Scenario based SCR calculation for `mdl::S2Module`
 function scr!(mdl::S2Module)
   shock_keys = collect(keys(mdl.shock))
   net =
-    (bof(mdl, :be) .- Float64[bof(mdl, sm) for sm in shock_keys])
+    (bof(mdl, :be) .- Float64[bof(mdl, 𝑠𝑚) for 𝑠𝑚 ∈ shock_keys])
   gross =
     (net .+ fdb(mdl, :be) .-
-     Float64[fdb(mdl, sm) for sm in shock_keys])
-  if :corr in fieldnames(mdl)
+     Float64[fdb(mdl, 𝑠𝑚) for 𝑠𝑚 ∈ shock_keys])
+  if :corr in fieldnames(typeof(mdl))
     mdl.scr[NET] = sqrt(net ⋅ (mdl.corr * net))
     mdl.scr[GROSS] = sqrt(gross ⋅ (mdl.corr * gross))
   else
@@ -112,8 +112,8 @@ Aggregation of SCRs of sub-modules
 """
 function scr(md::S2Module, corr::Matrix{Float64})
   _scr = zeros(Float64, 2)
-  net = Float64[md.mds[i].scr[NET] for i = 1:length(md.mds)]
-  gross = Float64[md.mds[i].scr[GROSS] for i = 1:length(md.mds)]
+  net = Float64[md.mds[𝑖].scr[NET] for 𝑖 ∈ 1:length(md.mds)]
+  gross = Float64[md.mds[𝑖].scr[GROSS] for 𝑖 ∈ 1:length(md.mds)]
   _scr[GROSS] = sqrt(gross ⋅ (corr * gross))
   _scr[NET] = sqrt(net ⋅ (corr * net))
   return _scr
@@ -131,13 +131,13 @@ function scr!(mkt_int::S2MktInt)
   shock_keys = collect(keys(mkt_int.shock))
   net =
     bof(mkt_int, :be) .-
-  Float64[bof(mkt_int, sm) for sm in shock_keys]
+  Float64[bof(mkt_int, 𝑠𝑚) for 𝑠𝑚 ∈ shock_keys]
   gross =
     net .+ fdb(mkt_int, :be) -
-    Float64[fdb(mkt_int, sm) for sm in shock_keys]
+    Float64[fdb(mkt_int, 𝑠𝑚) for 𝑠𝑚 ∈ shock_keys]
 
-  i_up = findin(shock_keys, [:spot_up])[1]
-  i_down = findin(shock_keys, [:spot_down])[1]
+  i_up = findfirst( (in)([:spot_up]), shock_keys)
+  i_down = findfirst( (in)([:spot_down]), shock_keys)
 
   mkt_int.scen_up = net[i_up] >= net[i_down]
   mkt_int.scr[NET] = maximum([0.0; net])
@@ -196,9 +196,9 @@ Shock for equity market risk
 **Changed:** `invs::InvPort`
 """
 function mkteqshock!(invs::InvPort, mkt_eq, eq_type::Symbol)
-  for invest in invs.igs[:IGStock].investments
-    if mkt_eq.eq2type[invest.name] == eq_type
-      invest.proc.x *= (1 + mkt_eq.shock[eq_type])
+  for 𝑖𝑛𝑣𝑒𝑠𝑡 ∈ invs.igs[:IGStock].investments
+    if mkt_eq.eq2type[𝑖𝑛𝑣𝑒𝑠𝑡.name] == eq_type
+      𝑖𝑛𝑣𝑒𝑠𝑡.proc.x *= (1 + mkt_eq.shock[eq_type])
     end
   end
 end
@@ -216,10 +216,10 @@ Must be called after the projection
 """
 function mkt_val0_adj!(proj::Projection, invs::InvPort,
                        mkt_eq, eq_type::Symbol)
-  for invest in invs.igs[:IGStock].investments
-    if mkt_eq.eq2type[invest.name] == eq_type
+  for 𝑖𝑛𝑣𝑒𝑠𝑡 ∈ invs.igs[:IGStock].investments
+    if mkt_eq.eq2type[𝑖𝑛𝑣𝑒𝑠𝑡.name] == eq_type
       proj.val_0[1,:invest] +=
-        mkt_eq.shock[eq_type] * invest.mv_0
+        mkt_eq.shock[eq_type] * 𝑖𝑛𝑣𝑒𝑠𝑡.mv_0
     end
   end
 end
@@ -248,7 +248,7 @@ end
 
 ## S2LifeBio ----------------------------------------------------
 """
-`select!(p::ProjParam, bio::S2LifeBio)`
+`selectmort!(p::ProjParam, bio::S2LifeBio)`
 
 Identify those model points that are subject to mortality
 risk. This function does not properly take into account
@@ -258,24 +258,24 @@ unlikely to change the set of identified model points.
 
 **Changed:** `bio::S2LifeBio  (bio.mp_select)`
 """
-function select!(p::ProjParam, bio::S2LifeBio)
+function selectmort!(p::ProjParam, bio::S2LifeBio)
   invs = InvPort(p.t_0, p.T, p.cap_mkt, p.invs_par...)
-  for symb in collect(keys(bio.shock))
+  for 𝑠𝑦𝑚𝑏 ∈ collect(keys(bio.shock))
     merge!(bio.mp_select,
-           Dict(symb => Array{Bool}(length(p.l_ins.mps))))
-    for (m, mp) in enumerate(p.l_ins.mps)
-      if (symb == :sx_mass_pension) & (!mp.pension_contract)
-        bio.mp_select[symb][m] = false
+           Dict(𝑠𝑦𝑚𝑏 => Array{Bool}(undef, length(p.l_ins.mps))))
+    for (𝑚, 𝑚𝑝) ∈ enumerate(p.l_ins.mps)
+      if (𝑠𝑦𝑚𝑏 == :sx_mass_pension) & (!𝑚𝑝.pension_contract)
+        bio.mp_select[𝑠𝑦𝑚𝑏][𝑚] = false
       else
         tp = tpg(p.t_0,
                  p.cap_mkt.rfr.x,
-                 mp)
-        mp_shock = deepcopy(mp)
-        bioshock!(mp_shock, bio, symb)
+                 𝑚𝑝)
+        mp_shock = deepcopy(𝑚𝑝)
+        bioshock!(mp_shock, bio, 𝑠𝑦𝑚𝑏)
         tp_shock = tpg(p.t_0,
                        p.cap_mkt.rfr.x,
                        mp_shock)
-        bio.mp_select[symb][m] = (tp_shock > tp)
+        bio.mp_select[𝑠𝑦𝑚𝑏][𝑚] = (tp_shock > tp)
       end
     end
   end
@@ -309,9 +309,9 @@ Shock for biometric risk
 function bioshock!(l_ins::LiabIns,
                    bio::S2LifeBio,
                    shock_symb::Symbol)
-  for (m, mp) in enumerate(l_ins.mps)
-    if bio.mp_select[shock_symb][m]
-      bioshock!(mp, bio, shock_symb)
+  for (𝑚, 𝑚𝑝) ∈ enumerate(l_ins.mps)
+    if bio.mp_select[shock_symb][𝑚]
+      bioshock!(𝑚𝑝, bio, shock_symb)
     end
   end
 end
@@ -383,17 +383,17 @@ function costshock!(invs::InvPort,
   shock_eoy =
     (1 + cost.shock[:cost]) *
     (1 + cost.shock_param[:infl]) .^ collect(1:l_ins.dur)
-  for symb in collect(keys(invs.igs))
-    invs.igs[symb].cost.rel .*= shock_eoy
-    invs.igs[symb].cost.abs .*= shock_eoy
+  for 𝑠𝑦𝑚𝑏 ∈ collect(keys(invs.igs))
+    invs.igs[𝑠𝑦𝑚𝑏].cost.rel .*= shock_eoy
+    invs.igs[𝑠𝑦𝑚𝑏].cost.abs .*= shock_eoy
   end
-  for mp in l_ins.mps
-    mp.λ[:, :boy] *= (1 + cost.shock[:cost])
-    mp.λ[:, :eoy] *= (1 + cost.shock[:cost])
-    mp.λ[:, :infl] += cost.shock_param[:infl]
-    mp.λ[:, :cum_infl] =
-      mp.λ[1, :cum_infl] / (1 + mp.λ[1, :infl]) *
-      cumprod(1 .+ mp.λ[:, :infl])
+  for 𝑚𝑝 ∈ l_ins.mps
+    𝑚𝑝.λ[:, :boy] *= (1 + cost.shock[:cost])
+    𝑚𝑝.λ[:, :eoy] *= (1 + cost.shock[:cost])
+    𝑚𝑝.λ[:, :infl] .+= cost.shock_param[:infl]
+    𝑚𝑝.λ[:, :cum_infl] =
+      𝑚𝑝.λ[1, :cum_infl] / (1 + 𝑚𝑝.λ[1, :infl]) *
+      cumprod(1 .+ 𝑚𝑝.λ[:, :infl])
   end
 end
 

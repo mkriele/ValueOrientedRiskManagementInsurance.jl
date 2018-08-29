@@ -2,11 +2,11 @@ export forw2spot, spot2forw
 
 ## capital market -----------------------------------------------
 """
-`yield(τ, stock::Stock)`
+`getyield(τ, stock::Stock)`
 
 calculates the yield of `stock` during year `τ`
 """
-function yield(τ, stock::Stock)
+function getyield(τ, stock::Stock)
   if τ > 1
     return stock.x[τ] / stock.x[τ - 1] - 1
   elseif τ == 1
@@ -17,11 +17,11 @@ function yield(τ, stock::Stock)
 end
 
 """
-`yield(τ, rfr::RiskFreeRate)`
+`getyield(τ, rfr::RiskFreeRate)`
 
 calculates the yield of `rfr` during year `τ`
 """
-function yield(τ, rfr::RiskFreeRate)
+function getyield(τ, rfr::RiskFreeRate)
   if τ >= 1
     return rfr.x[τ]
   else
@@ -37,7 +37,7 @@ calculates the spot rate `s` rate from the forward rate `f`:
   `(1+f[1])(1+f[2])...(1+f[n]) = (1+s[n])^n`
 """
 forw2spot(f::Vector{Float64}) =
-  cumprod(1 .+ f) .^ (1 ./ collect(1:length(f))) - 1
+  cumprod(1 .+ f) .^ (1 ./ collect(1:length(f))) .- 1
 
 """
 `spot2forw(s::Vector{Float64})`
@@ -48,8 +48,8 @@ calculates the forward rate `f` rate from the spot rate `s`:
 """
 function spot2forw(s::Vector{Float64})
   f = zeros(Float64, length(s))
-  for n in length(s):-1:2
-    f[n] = (1 + s[n])^n / (1 + s[n-1])^(n - 1) -1
+  for 𝑛 ∈ length(s):-1:2
+    f[𝑛] = (1 + s[𝑛])^𝑛 / (1 + s[𝑛-1])^(𝑛 - 1) -1
   end
   f[1] = s[1]
   return f
@@ -65,7 +65,7 @@ initial market value.
 **Changed**:  `invest`
 """
 function project!(τ::Int, mv_boy::Float64, invest::Invest)
-  invest.mv[τ] = (1 + yield(τ, invest.proc)) * mv_boy
+  invest.mv[τ] = (1 + getyield(τ, invest.proc)) * mv_boy
 end
 
 """
@@ -79,9 +79,9 @@ initial market value.
 function project!(τ::Int, mv_bop_total::Float64, ig::InvestGroup)
   mv_bop = ig.alloc.total[τ] * mv_bop_total
   ig.mv[τ] = 0
-  for (i, ig_invest) in enumerate(ig.investments)
-    project!(τ, ig.alloc.all[τ, i] * mv_bop, ig_invest)
-    ig.mv[τ] += ig_invest.mv[τ]
+  for (𝑖, 𝑖𝑔_𝑖𝑛𝑣𝑒𝑠𝑡) ∈ enumerate(ig.investments)
+    project!(τ, ig.alloc.all[τ, 𝑖] * mv_bop, 𝑖𝑔_𝑖𝑛𝑣𝑒𝑠𝑡)
+    ig.mv[τ] += 𝑖𝑔_𝑖𝑛𝑣𝑒𝑠𝑡.mv[τ]
   end
   ig.cost.total[τ] =
     ig.cost.abs[τ] * ig.cost.cum_infl_abs[τ] +
@@ -103,10 +103,10 @@ function alloc!(τ, cap_mkt::CapMkt, invs::InvPort)
     invs.igs[:IGCash].alloc.total[τ] =
       1 - invs.igs[:IGStock].alloc.total[τ]
     ## we leave the allocations within each group unchanged:
-    for symb in [:IGCash, :IGStock]
-      for i = 1:size(invs.igs[symb].alloc.all, 2)
-        invs.igs[symb].alloc.all[τ, i] =
-          invs.igs[symb].alloc.all[τ-1, i]
+    for 𝑠𝑦𝑚𝑏 ∈ [:IGCash, :IGStock]
+      for 𝑖 = 1:size(invs.igs[𝑠𝑦𝑚𝑏].alloc.all, 2)
+        invs.igs[𝑠𝑦𝑚𝑏].alloc.all[τ, 𝑖] =
+          invs.igs[𝑠𝑦𝑚𝑏].alloc.all[τ-1, 𝑖]
       end
     end
   end
@@ -124,10 +124,10 @@ function project!(τ::Int, mv_boy::Float64, invs::InvPort)
   invs.mv[τ] = 0.0
   invs.cost[τ] = 0.0
   invs.mv_boy[τ] = mv_boy
-  for ig in values(invs.igs)
-    project!(τ, mv_boy, ig)
-    invs.mv[τ] += ig.mv[τ]
-    invs.cost[τ] += ig.cost.total[τ]
+  for 𝑖𝑔 ∈ values(invs.igs)
+    project!(τ, mv_boy, 𝑖𝑔)
+    invs.mv[τ] += 𝑖𝑔.mv[τ]
+    invs.cost[τ] += 𝑖𝑔.cost.total[τ]
   end
   invs.yield[τ] = invs.mv[τ] / mv_boy - 1
 end
@@ -144,9 +144,9 @@ function premium(ins_sum, rfr, prob, β, λ)
   v_boy = [1; v_eoy[1:end-1]]
   num =
     sum(lx_boy .* ins_sum .*
-        (v_boy .* λ[:boy] .* λ[:cum_infl] ./ (1 + λ[:infl]) +
-           v_eoy .* (λ[:eoy] .* λ[:cum_infl] +
-                       prob[:px] .* β[:px] +
+        (v_boy .* λ[:boy] .* λ[:cum_infl] ./ (1 .+ λ[:infl]) .+
+           v_eoy .* (λ[:eoy] .* λ[:cum_infl] .+
+                       prob[:px] .* β[:px] .+
                        prob[:qx] .* β[:qx])
          ))
   denom =
@@ -184,8 +184,8 @@ function tpg(τ, rfr, prob, β, λ)
   if τ >= dur
     return 0.0
   else
-    for s in (dur-1):-1:τ
-      res = tpgrec(s, res, rfr, prob, β, λ)
+    for 𝑠 ∈ (dur-1):-1:τ
+      res = tpgrec(𝑠, res, rfr, prob, β, λ)
     end
     return res
   end
@@ -228,8 +228,8 @@ function pv(τ::Int, cap_mkt::CapMkt, debt::Debt)
     return 0.0
   else
     p_v = debt.nominal
-    for s = (debt.τ_mat - 1) : -1 : τ
-      p_v = (debt.coupon + p_v) / (1 + cap_mkt.rfr.x[s + 1])
+    for 𝑠 ∈ (debt.τ_mat - 1) : -1 : τ
+      p_v = (debt.coupon + p_v) / (1 + cap_mkt.rfr.x[𝑠 + 1])
     end
     return p_v
   end
@@ -244,8 +244,8 @@ has occured beforehand
 """
 function pv(τ::Int, cap_mkt::CapMkt, l_other::LiabOther)
   p_v = 0.0
-  for debt in l_other.subord
-    p_v += pv(τ, cap_mkt, debt)
+  for 𝑑𝑒𝑏𝑡 ∈ l_other.subord
+    p_v += pv(τ, cap_mkt, 𝑑𝑒𝑏𝑡)
   end
   return p_v
 end
@@ -266,8 +266,8 @@ other liabilities `l_other` at the end of year `τ`
 """
 function paycoupon(τ::Int, l_other::LiabOther)
   pay = 0.0
-  for debt in l_other.subord
-    pay += paycoupon(τ, debt)
+  for 𝑑𝑒𝑏𝑡 ∈ l_other.subord
+    pay += paycoupon(τ, 𝑑𝑒𝑏𝑡)
   end
   return pay
 end
@@ -290,8 +290,8 @@ the end of year `τ`
 """
 function payprincipal(τ::Int, l_other::LiabOther)
   pay = 0.0
-  for debt in l_other.subord
-    pay += payprincipal(τ, debt)
+  for 𝑑𝑒𝑏𝑡 ∈ l_other.subord
+    pay += payprincipal(τ, 𝑑𝑒𝑏𝑡)
   end
   return pay
 end
@@ -314,8 +314,8 @@ which are taken out at the beginning of year `τ`
 """
 function getloan(τ::Int, l_other::LiabOther)
   nominal = 0.0
-  for debt in l_other.subord
-    nominal += getloan(τ, debt)
+  for 𝑑𝑒𝑏𝑡 ∈ l_other.subord
+    nominal += getloan(τ, 𝑑𝑒𝑏𝑡)
   end
   return nominal
 end
@@ -331,21 +331,21 @@ We do not input the factors `gc` directly but their year on year
 differences `Δgc`.
 """
 function goingconcern(debts::Vector{Debt}, Δgc::Vector{Float64})
-  new_debt_vec = Array{Debt}(0)
-  for debt in debts
-    if debt.nominal > 0.0
-      τ_init = max(1, debt.τ_init)
-      diff_nom = -Δgc * debt.nominal
-      for τ = τ_init:debt.τ_mat
-        t = debt.t_init + τ - debt.τ_init
+  new_debt_vec = Array{Debt}(undef, 0)
+  for 𝑑𝑒𝑏𝑡 ∈ debts
+    if 𝑑𝑒𝑏𝑡.nominal > 0.0
+      τ_init = max(1, 𝑑𝑒𝑏𝑡.τ_init)
+      diff_nom = -Δgc * 𝑑𝑒𝑏𝑡.nominal
+      for 𝜏 ∈ τ_init:𝑑𝑒𝑏𝑡.τ_mat
+        t = 𝑑𝑒𝑏𝑡.t_init + 𝜏 - 𝑑𝑒𝑏𝑡.τ_init
         push!(new_debt_vec,
-              Debt(debt.name,
-                   debt.t_init,
+              Debt(𝑑𝑒𝑏𝑡.name,
+                   𝑑𝑒𝑏𝑡.t_init,
                    t,
-                   debt.τ_init,
-                   τ,
-                   diff_nom[τ],
-                   debt.coupon * diff_nom[τ] / debt.nominal))
+                   𝑑𝑒𝑏𝑡.τ_init,
+                   𝜏,
+                   diff_nom[𝜏],
+                   𝑑𝑒𝑏𝑡.coupon * diff_nom[𝜏] / 𝑑𝑒𝑏𝑡.nominal))
       end
     end
   end
@@ -372,7 +372,7 @@ end
 indicator for the state of the economy at the end of year `τ`
 """
 dynstate(τ, cap_mkt::CapMkt) =
-  yield(τ, cap_mkt.stock) / max(yield(τ, cap_mkt.rfr), eps()) - 1
+  getyield(τ, cap_mkt.stock) / max(getyield(τ, cap_mkt.rfr), eps()) - 1
 
 """
 `dynstateavg(τ, cap_mkt::CapMkt)`
@@ -381,10 +381,10 @@ Two year average of the indicator for the state of the economy
 at the end of year `τ`.
 """
 dynstateavg(τ, cap_mkt::CapMkt) =
-  0.5 * (yield(τ - 1, cap_mkt.stock) /
-           max(yield(τ-1, cap_mkt.rfr), eps())
-         + yield(τ, cap_mkt.stock) /
-           max(yield(τ, cap_mkt.rfr), eps())) - 1
+  0.5 * (getyield(τ - 1, cap_mkt.stock) /
+           max(getyield(τ-1, cap_mkt.rfr), eps())
+         + getyield(τ, cap_mkt.stock) /
+           max(getyield(τ, cap_mkt.rfr), eps())) - 1
 
 
 """
@@ -414,11 +414,11 @@ Indicator for bonus rate expectation at the end of year `τ`
 function biquotient(τ, yield_eoy, cap_mkt, invs, mp, dyn)
   if τ ≤ mp.dur
     ind_bonus =
-      yield(τ, cap_mkt.stock) /
+      getyield(τ, cap_mkt.stock) /
       max(0.0,
           bonusrate(τ - 1, yield_eoy, mp, dyn) + mp.rfr_price[τ])
     ind_bonus_hypo =
-      yield(0, cap_mkt.stock) /
+      getyield(0, cap_mkt.stock) /
       max(eps(), mp.bonus_rate_hypo + mp.rfr_price_0)
     return ind_bonus / ind_bonus_hypo
   else
@@ -433,8 +433,8 @@ Dynamic lapse probability factor to adjust the initial estimate
 """
 function δsx(τ, cap_mkt, invs, mp, dyn)
   yield_eoy =
-    invs.igs[:IGStock].alloc.total[τ] * yield(τ, cap_mkt.stock) +
-    invs.igs[:IGCash].alloc.total[τ] * yield(τ, cap_mkt.rfr)
+    invs.igs[:IGStock].alloc.total[τ] * getyield(τ, cap_mkt.stock) +
+    invs.igs[:IGCash].alloc.total[τ] * getyield(τ, cap_mkt.rfr)
   if τ - 1 > mp.t_start
     bi_quot =  biquotient(τ, yield_eoy, cap_mkt, invs, mp, dyn)
   else
@@ -509,9 +509,9 @@ function val0!(cap_mkt::CapMkt,
                l_other::LiabOther,
                proj::Projection)
   proj.val_0[1, :invest] = invs.mv_0
-  for mp in liabs.mps
-    if 0 <= mp.dur
-      proj.val_0[1, :tpg] += tpg(0, cap_mkt.rfr.x, mp)
+  for 𝑚𝑝 ∈ liabs.mps
+    if 0 <= 𝑚𝑝.dur
+      proj.val_0[1, :tpg] += tpg(0, cap_mkt.rfr.x, 𝑚𝑝)
     end
   end
   proj.val_0[1, :l_other] = pv(0, cap_mkt, l_other)
@@ -531,13 +531,13 @@ Project one year, update values at the beginning of the year `τ`
 function projectboy!(τ, proj::Projection, liabs::LiabIns)
   proj.cf[τ, :prem] = 0.0
   proj.cf[τ, :λ_boy] = 0.0
-  for mp in liabs.mps
-    if τ <= mp.dur
-      mp.lx_boy[τ] = (τ == 1 ? 1 : mp.lx_boy_next)
-      proj.cf[τ, :prem] += mp.lx_boy[τ] * mp.β[τ, :prem]
+  for 𝑚𝑝 ∈ liabs.mps
+    if τ <= 𝑚𝑝.dur
+      𝑚𝑝.lx_boy[τ] = (τ == 1 ? 1 : 𝑚𝑝.lx_boy_next)
+      proj.cf[τ, :prem] += 𝑚𝑝.lx_boy[τ] * 𝑚𝑝.β[τ, :prem]
       proj.cf[τ, :λ_boy] -=
-        mp.lx_boy[τ] * mp.λ[τ, :boy] *
-        mp.λ[τ, :cum_infl] / (1 + mp.λ[τ, :infl])
+        𝑚𝑝.lx_boy[τ] * 𝑚𝑝.λ[τ, :boy] *
+        𝑚𝑝.λ[τ, :cum_infl] / (1 + 𝑚𝑝.λ[τ, :infl])
     end
   end
 end
@@ -557,29 +557,29 @@ function projecteoy!(τ,
                      dyn::Dynamic,
                      proj::Projection)
   tpg_price_positive = 0.0
-  for mp in liabs.mps
-    if τ <= mp.dur
+  for 𝑚𝑝 ∈ liabs.mps
+    if τ <= 𝑚𝑝.dur
       tpg_price_positive +=
-        mp.lx_boy[τ] *
-        max(0, (τ == 1 ? mp.tpg_price_0 : mp.tpg_price[τ-1]))
+        𝑚𝑝.lx_boy[τ] *
+        max(0, (τ == 1 ? 𝑚𝑝.tpg_price_0 : 𝑚𝑝.tpg_price[τ-1]))
     end
   end
-  for mp in liabs.mps
-    if τ <= mp.dur
-      prob = deepcopy(mp.prob)
+  for 𝑚𝑝 ∈ liabs.mps
+    if τ <= 𝑚𝑝.dur
+      prob = deepcopy(𝑚𝑝.prob)
       prob[:,:sx] *=
-        δsx(τ, cap_mkt, invs, mp, dyn)
+        δsx(τ, cap_mkt, invs, 𝑚𝑝, dyn)
       prob[:,:px] = 1 .- prob[:,:qx] - prob[:,:sx]
-      mp.lx_boy_next = mp.lx_boy[τ] * prob[τ, :px]
-      for wx in [:qx, :sx, :px]
-        proj.cf[τ, wx] -=
-          mp.lx_boy[τ] * prob[τ, wx] * mp.β[τ, wx]
+      𝑚𝑝.lx_boy_next = 𝑚𝑝.lx_boy[τ] * prob[τ, :px]
+      for 𝑤𝑥 ∈ [:qx, :sx, :px]
+        proj.cf[τ, 𝑤𝑥] -=
+          𝑚𝑝.lx_boy[τ] * prob[τ, 𝑤𝑥] * 𝑚𝑝.β[τ, 𝑤𝑥]
       end
       proj.cf[τ, :λ_eoy] -=
-        mp.lx_boy[τ] * mp.λ[τ, :eoy] * mp.λ[τ, :cum_infl]
+        𝑚𝑝.lx_boy[τ] * 𝑚𝑝.λ[τ, :eoy] * 𝑚𝑝.λ[τ, :cum_infl]
       proj.val[τ, :tpg] +=
-        mp.lx_boy[τ] * prob[τ, :px] *
-        tpg(τ, cap_mkt.rfr.x, prob, mp.β, mp.λ)
+        𝑚𝑝.lx_boy[τ] * prob[τ, :px] *
+        tpg(τ, cap_mkt.rfr.x, prob, 𝑚𝑝.β, 𝑚𝑝.λ)
     end
   end
   proj.cf[τ, :Δtpg] =
@@ -623,15 +623,15 @@ function bonus!(τ,
                 dyn::Dynamic,
                 proj,
                 surp_pre_profit_tax_bonus)
-  for mp in liabs.mps
-    if τ <= mp.dur
+  for 𝑚𝑝 ∈ liabs.mps
+    if τ <= 𝑚𝑝.dur
       proj.cf[τ, :bonus] -=
         min(surp_pre_profit_tax_bonus,
-            mp.lx_boy[τ] *
-              bonusrate(τ, invs.yield[τ], mp, dyn) *
+            𝑚𝑝.lx_boy[τ] *
+              bonusrate(τ, invs.yield[τ], 𝑚𝑝, dyn) *
               max(0, (τ == 1 ?
-                        mp.tpg_price_0 :
-                        mp.tpg_price[τ-1])))
+                        𝑚𝑝.tpg_price_0 :
+                        𝑚𝑝.tpg_price[τ-1])))
     end
   end
 end
@@ -727,8 +727,8 @@ value at the end of each year. The last component is zero.
 function pvvec(rfr::Vector{Float64}, cf)
   T = length(cf)
   val = zeros(Float64, T)
-  for t in reverse(collect(1:(T-1))) # [T-1:-1:1] #r
-    val[t] = pvprev(rfr[t + 1], val[t + 1], cf[t + 1])
+  for 𝑡 ∈ reverse(collect(1:(T-1))) # [T-1:-1:1] #r
+    val[𝑡] = pvprev(rfr[𝑡 + 1], val[𝑡 + 1], cf[𝑡 + 1])
   end
   return val
 end
@@ -769,12 +769,12 @@ function valcostprov!(rfr::Vector{Float64},
     sum(convert(Array,
                 proj.val_0[1, [:tpg, :bonus, :l_other]])) *
     cash_cost.cum_infl_rel[1] * cash_cost.rel[1]
-  for t = 2:proj.dur
-    proj.cf[t, :cost_prov] =
-      proj.fixed_cost_gc[t] +
+  for 𝑡 ∈ 2:proj.dur
+    proj.cf[𝑡, :cost_prov] =
+      proj.fixed_cost_gc[𝑡] +
       sum(convert(Array,
-                  proj.val[t - 1, [:tpg, :bonus, :l_other]])) *
-      cash_cost.cum_infl_rel[t] * cash_cost.rel[t]
+                  proj.val[𝑡 - 1, [:tpg, :bonus, :l_other]])) *
+      cash_cost.cum_infl_rel[𝑡] * cash_cost.rel[𝑡]
   end
   proj.val[:cost_prov] =
     pvvec(rfr - cash_cost.rel,  proj.cf[:cost_prov])

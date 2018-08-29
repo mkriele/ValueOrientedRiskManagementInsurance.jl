@@ -82,7 +82,7 @@ dfalloc(dur, df, mv_total_0, sp_2_cqs) =
         vcat(vec(df[:mv_0] / sum(df[:mv_0]))',
              zeros(Float64, dur-1, nrow(df))),
         convert(Array, df[:lgd]),
-        Symbol[sp_2_cqs[df[i,:rating]] for i in 1:nrow(df)])
+        Symbol[sp_2_cqs[df[𝑖,:rating]] for 𝑖 ∈ 1:nrow(df)])
 
 allocs = Dict{Symbol, Alloc}()
 merge!(allocs,
@@ -113,10 +113,10 @@ prob_be =  DataFrame(qx = prob_price[:qx] .- 0.0001,
 ## cost inflation
 ## we define a be cost inflation vector for each portfolio tranche,
 ## starting with year t_0 + 1
-cost_infl_be = Array{Vector{Float64}}(nrow(df_portfolio))
-for d = 1:nrow(df_portfolio)
-  cost_infl_be[d] =
-    fill(general_cost_infl, T + df_portfolio[d, :t_start])
+cost_infl_be = Array{Vector{Float64}}(undef, nrow(df_portfolio))
+for 𝑑 ∈ 1:nrow(df_portfolio)
+  cost_infl_be[𝑑] =
+    fill(general_cost_infl, T + df_portfolio[𝑑, :t_start])
 end
 
 ## dynamics -----------------------------------------------------

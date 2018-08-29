@@ -17,12 +17,12 @@ function S2MktInt(param::ProjParam,
   p = deepcopy(param)
   mkt_int = S2MktInt(ds2_mkt_int)
   mkt_int.balance = deepcopy(s2_balance)
-  for int_type_symb in collect(keys(mkt_int.shock))
+  for 𝑖𝑛𝑡_𝑡𝑦𝑝𝑒_𝑠𝑦𝑚𝑏 ∈ collect(keys(mkt_int.shock))
     append!(mkt_int.balance,
             s2bal(p, mkt_int,
                   (inv, s2_int) ->
-                  mktintshock!(inv, s2_int, int_type_symb),
-                  int_type_symb))
+                  mktintshock!(inv, s2_int, 𝑖𝑛𝑡_𝑡𝑦𝑝𝑒_𝑠𝑦𝑚𝑏),
+                  𝑖𝑛𝑡_𝑡𝑦𝑝𝑒_𝑠𝑦𝑚𝑏))
   end
   scr!(mkt_int)
   return mkt_int
@@ -48,12 +48,12 @@ function S2MktEq(param::ProjParam,
   mkt_eq = S2MktEq(ds2_mkt_eq)
   merge!(mkt_eq.eq2type, eq2type)
   mkt_eq.balance = deepcopy(s2_balance)
-  for shock_symb in collect(keys(mkt_eq.shock))
+  for 𝑠𝑦𝑚𝑏 ∈ collect(keys(mkt_eq.shock))
     append!(mkt_eq.balance,
             s2bal(p, mkt_eq,
                   (invs, s2_eq) ->
-                  mkteqshock!(invs, s2_eq, shock_symb),
-                  shock_symb))
+                  mkteqshock!(invs, s2_eq, 𝑠𝑦𝑚𝑏),
+                  𝑠𝑦𝑚𝑏))
   end
   scr!(mkt_eq)
   return mkt_eq
@@ -61,7 +61,7 @@ end
 
 ## S2Mkt --------------------------------------------------------
 function S2Mkt(ds2_mkt::Dict{Symbol, Any})
-  mds = Array{S2Module}(0)
+  mds = Array{S2Module}(undef, 0)
   corr_up = ds2_mkt[:corr](ds2_mkt[:raw], ds2_mkt[:adj], :up)
   corr_down = ds2_mkt[:corr](ds2_mkt[:raw], ds2_mkt[:adj], :down)
   scr = zeros(Float64, 2)
@@ -84,9 +84,9 @@ function S2Mkt(param::ProjParam,
   push!(mkt.mds, S2MktFx(p, s2_balance))
   push!(mkt.mds, S2MktConc(p, s2_balance))
   scen_up = false
-  for i = 1:length(mkt.mds)
-    if :scen_up in fieldnames(mkt.mds[i])
-      scen_up = mkt.mds[i].scen_up
+  for 𝑖 ∈ 1:length(mkt.mds)
+    if :scen_up ∈ fieldnames(typeof(mkt.mds[𝑖]))
+      scen_up = mkt.mds[𝑖].scen_up
     end
   end
   corr = (scen_up ? mkt.corr_up : mkt.corr_down)
@@ -96,16 +96,16 @@ end
 
 ## S2Def1 -------------------------------------------------------
 function S2Def1(ds2_def_1)
-  tlgd = Array{Float64}(0)
-  slgd = Array{Float64}(0)
-  u = Array{Float64}(0,0)
-  v = Array{Float64}(0)
+  tlgd = Array{Float64}(undef, 0)
+  slgd = Array{Float64}(undef, 0)
+  u = Array{Float64}(undef, 0,0)
+  v = Array{Float64}(undef, 0)
   scr_par = Dict{Symbol, Vector{Float64}}()
-  for i = 1:nrow(ds2_def_1[:scr_par])
+  for 𝑖 ∈ 1:nrow(ds2_def_1[:scr_par])
     merge!(scr_par,
-           Dict(ds2_def_1[:scr_par][i, :range] =>
-            [ds2_def_1[:scr_par][i, :threshold_upper],
-             ds2_def_1[:scr_par][i, :multiplier]]))
+           Dict(ds2_def_1[:scr_par][𝑖, :range] =>
+            [ds2_def_1[:scr_par][𝑖, :threshold_upper],
+             ds2_def_1[:scr_par][𝑖, :multiplier]]))
   end
   scr = zeros(Float64, 2)
   return S2Def1(tlgd, slgd, u, v, scr_par, scr)
@@ -115,27 +115,27 @@ function S2Def1(param::ProjParam,
                 ds2_def_1::Dict{Symbol, Any})
   p = deepcopy(param)
   def = S2Def1(ds2_def_1)
-  cqs_vec = filter(x -> ismatch(r"cqs", string(x)),
+  cqs_vec = filter(x -> occursin("cqs", string(x)),
                    names(ds2_def_1[:prob]))
-  prob = [ds2_def_1[:prob][1, cqs] for cqs in cqs_vec]
+  prob = [ds2_def_1[:prob][1, 𝑐𝑞𝑠] for 𝑐𝑞𝑠 ∈ cqs_vec]
   def.tlgd = zeros(Float64, length(cqs_vec))
   def.slgd = zeros(Float64, length(cqs_vec))
-  def.u = Array{Float64}(length(cqs_vec), length(cqs_vec))
-  def.v = Array{Float64}(length(cqs_vec))
+  def.u = Array{Float64}(undef, length(cqs_vec), length(cqs_vec))
+  def.v = Array{Float64}(undef, length(cqs_vec))
 
   def.v = 1.5 * prob .* (1 .- prob) ./ (2.5 .- prob)
-  for i = 1:size(def.u,1), j = 1:1:size(def.u,2)
-    def.u[i,j] =
-      (1-prob[i]) * prob[i] * (1-prob[j]) * prob[j] /
-      (1.25 * (prob[i] + prob[j]) - prob[i] * prob[j])
+  for 𝑖 ∈ 1:size(def.u,1), 𝑗 ∈ 1:1:size(def.u,2)
+    def.u[𝑖,𝑗] =
+      (1-prob[𝑖]) * prob[𝑖] * (1-prob[𝑗]) * prob[𝑗] /
+      (1.25 * (prob[𝑖] + prob[𝑗]) - prob[𝑖] * prob[𝑗])
   end
   invs = InvPort(p.t_0, p.T, p.cap_mkt, p.invs_par...)
-  for i = 1:length(invs.igs[:IGCash].investments)
-    j = indexin([invs.igs[:IGCash].investments[i].cqs],
+  for 𝑖 = 1:length(invs.igs[:IGCash].investments)
+    j = indexin([invs.igs[:IGCash].investments[𝑖].cqs],
                 cqs_vec)[1]
     lgd =
-      invs.igs[:IGCash].investments[i].lgd *
-      invs.igs[:IGCash].investments[i].mv_0
+      invs.igs[:IGCash].investments[𝑖].lgd *
+      invs.igs[:IGCash].investments[𝑖].mv_0
     def.tlgd[j] += lgd
     def.slgd[j] += lgd * lgd
   end
@@ -145,7 +145,7 @@ end
 
 ## S2Def --------------------------------------------------------
 function S2Def(ds2_def)
-  mds = Array{S2Module}(0)
+  mds = Array{S2Module}(undef, 0)
   corr = ds2_def[:corr]
   scr = zeros(Float64, 2)
   return S2Def(mds, corr, scr)
@@ -185,12 +185,12 @@ function S2LifeBio(param::ProjParam,
   p = deepcopy(param)
   bio = S2LifeBio(ds2_bio)
   bio.balance = deepcopy(s2_balance)
-  select!(p, bio)
-  for symb in collect(keys(bio.shock))
+  selectmort!(p, bio)
+  for 𝑠𝑦𝑚𝑏 ∈ collect(keys(bio.shock))
     append!(bio.balance,
             s2bal(p, bio,
-                  (l_ins, wx) -> bioshock!(l_ins, wx, symb),
-                  symb))
+                  (l_ins, wx) -> bioshock!(l_ins, wx, 𝑠𝑦𝑚𝑏),
+                  𝑠𝑦𝑚𝑏))
   end
   scr!(bio)
   return bio
@@ -217,10 +217,10 @@ function S2LifeCost(param::ProjParam,
   p = deepcopy(param)
   cost = S2LifeCost(ds2_cost)
   cost.balance = deepcopy(s2_balance)
-  for symb in collect(keys(cost.shock))
+  for 𝑠𝑦𝑚𝑏 ∈ collect(keys(cost.shock))
     append!(cost.balance,
             s2bal(p, cost, (invs, l_ins, cst) ->
-                  costshock!(invs, l_ins, cst), symb))
+                  costshock!(invs, l_ins, cst), 𝑠𝑦𝑚𝑏))
   end
   scr!(cost)
   return cost
@@ -228,7 +228,7 @@ end
 
 ## S2Life -------------------------------------------------------
 function S2Life(ds2_life::Dict{Symbol, Any})
-  mds = Array{S2Module}(0)
+  mds = Array{S2Module}(undef, 0)
   corr = ds2_life[:corr]
   scr = zeros(Float64, 2)
   return S2Life(mds, corr, scr)
@@ -259,7 +259,7 @@ S2Op(ds2_op::Dict{Symbol, Float64}, s2_op::Dict) =
 
 ## S2 -----------------------------------------------------------
 function   S2(ds2_op, s2_op)
-  mds = Array{S2Module}(0)
+  mds = Array{S2Module}(undef, 0)
   balance = DataFrame()
   corr = zeros(Float64, 5, 5)
   bscr = zeros(Float64, 2)
