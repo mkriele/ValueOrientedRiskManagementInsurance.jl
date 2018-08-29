@@ -1,6 +1,6 @@
 language: julia
 julia:
-  - 0.6
+  - 0.7
 notifications:
   email: true
 #script: # the default script does the following
