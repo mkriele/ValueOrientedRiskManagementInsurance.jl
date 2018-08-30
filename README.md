@@ -24,7 +24,7 @@ Any futher development for future English versions (_Value-Oriented Risk Managem
 
 **Errata:** Corrections of errors in the book.  We list all errors we are aware of. In order to display the text, simply click on the corresponding file name in the list of linked documents above.
 
-Notice that Section C.2 "Installation des Packages _ValueOrientedRiskManagementInsurance_" is outdated, as a new package manager has been introduced with Julia 1.0.  Please see the [_Julia documentation_](https://docs.julialang.org/en/v1/), Section  [Pkg](https://docs.julialang.org/en/v1/stdlib/Pkg/). for details.
+Notice that Section C.2 "Installation des Packages _ValueOrientedRiskManagementInsurance_" is outdated, as a new package manager has been introduced with Julia 1.0.  Please see the [_Julia documentation_](https://docs.julialang.org/en/v1/), Section  [Pkg](https://docs.julialang.org/en/v1/stdlib/Pkg/) for details.
 
 ## Structure of the package
 
