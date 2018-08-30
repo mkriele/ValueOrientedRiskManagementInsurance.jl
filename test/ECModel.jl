@@ -404,7 +404,6 @@ diff_ec_net =
   total.net.eco_cap -
   sum([bu[𝑖].net.eco_cap for 𝑖 ∈ 1:length(bu)])
 
-println("start 2")
 ## BU results
 profit_gross = Real[bu[𝑖].gross.profit_mean for 𝑖 ∈ 1:length(bu)]
 profit_net = Real[bu[𝑖].net.profit_mean for 𝑖 ∈ 1:length(bu)]
@@ -419,7 +418,6 @@ x = hcat(profit_gross, ec_gross, ec_net)
 
 
 ##  Portfolio Optimizations #####################################
-println("start 3")
 
 ins_input = deepcopy(insurance_input)
 inv_input = deepcopy(invest_input)
@@ -440,7 +438,6 @@ bu_rp, total_rp =
           n_scen, α, s, costs_fixed)
 
 ## Optimizing Capitalization ====================================
-println("start 4")
 println("Optimizing Capitalization ... ")
 inv_input_oc, i_oc_opt, invest_init_oc, ec_net_oc, rorac_net_oc,
 roc_net_oc, inv_init_oc_opt, ec_net_oc_opt, profit_net_oc_opt =
@@ -454,7 +451,6 @@ bu_oc, total_oc =
 
 ## Optimizing Fire Reinsurance ==================================
 println("Optimizing Fire Reinsurance ...")
-println("start 5")
 ins_input_ofr, ceded_ofr, profit_net_ofr, ec_net_ofr,
 i_ofr, ceded_ofr_opt, profit_net_ofr_opt, ec_net_ofr_opt,
 rorac_net_ofr_opt =
@@ -465,7 +461,6 @@ rorac_net_ofr_opt =
 
 ## Optimizing Reinsurance RAROC no constraints ==================
 println("Optimizing Reinsurance RAROC no constraints ... ")
-println("start 6")
 
 ins_input_orraroc, profit_net_orraroc, ec_net_orraroc,
 rorac_net_orraroc, profit_net_orraroc_opt, ec_net_orraroc_opt,
@@ -478,7 +473,6 @@ p_min = findfirst( (in)(ec_min), ec_net_orraroc)
 
 ## Optimizing Reinsurance EVA no constraints ====================
 println("Optimizing Reinsurance EVA no constraints ... ")
-println("start 7")
 
 ins_input_oreva, avg_ceded_oreva, eva_net_oreva,
 avg_ceded_opt_oreva, eva_net_opt_oreva =
