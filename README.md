@@ -9,7 +9,7 @@ The package provides example calculations for the of the book
 
 > Kriele M. and Wolf, J. [_Wertorientiertes Risikomanagement von  Versicherungsunternehmen_](http://www.springer.com/de/book/9783662502563), 2nd edition, Springer-Verlag, Berlin Heidelberg,  2016
 
-Any futher development for future English versions (_Value-Oriented Risk Management of Insurance Companies_) or German versions of this book will take place in a separate GitHub repository.  
+Any futher development for future English versions (_Value-Oriented Risk Management of Insurance Companies_) or German versions of this book will take place in the separate GitHub repository [_RMInsurance.jl_](https://github.com/mkriele/RMInsurance.jl).  
 
 (The examples for the first editions  were less complex and written in R)
 
