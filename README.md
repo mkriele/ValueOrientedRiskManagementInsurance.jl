@@ -1,6 +1,6 @@
 # ValueOrientedRiskManagementInsurance
 
-[![Build Status](https://travis-ci.com/mkriele/ValueOrientedRiskManagementInsurance.jl.svg?branch=master)](https://travis-ci.com/mkriele/ValueOrientedRiskManagementInsurance.jl)
+[![Build Status](https://travis-ci.org/mkriele/ValueOrientedRiskManagementInsurance.jl.svg?branch=master)](https://travis-ci.org/mkriele/ValueOrientedRiskManagementInsurance.jl)
 
 **The master branch of this package requires Julia 1.0.x.**  
 
