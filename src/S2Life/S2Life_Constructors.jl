@@ -132,7 +132,7 @@ function S2Def1(param::ProjParam,
   invs = InvPort(p.t_0, p.T, p.cap_mkt, p.invs_par...)
   for 𝑖 = 1:length(invs.igs[:IGCash].investments)
     j = indexin([invs.igs[:IGCash].investments[𝑖].cqs],
-                cqs_vec)[1]
+          Symbol.(cqs_vec))[1]
     lgd =
       invs.igs[:IGCash].investments[𝑖].lgd *
       invs.igs[:IGCash].investments[𝑖].mv_0

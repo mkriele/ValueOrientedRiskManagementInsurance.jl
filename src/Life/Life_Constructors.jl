@@ -183,6 +183,17 @@ function Debt(t_0, df_debt::DataFrame)
        df_debt[1, :nominal], df_debt[1, :coupon])
 end
 
+function Debt(t_0, df_debt::DataFrameRow)
+  name = df_debt[ :name]
+  t_init = df_debt[ :t_init]
+  t_mat = df_debt[ :t_mat]
+  τ_init = t_init - t_0
+  dur = t_mat - t_init + 1
+  τ_mat = dur + τ_init - 1
+  Debt(name, t_init, t_mat, τ_init, τ_mat,
+       df_debt[ :nominal], df_debt[ :coupon])
+end
+
 function LiabOther(t_0, df_debts::DataFrame)
   subord = Array{Debt}(undef, nrow(df_debts))
   for 𝑑 ∈ 1:nrow(df_debts)
@@ -228,7 +239,7 @@ function Projection(liabs, tax_rate, tax_credit_0)
     bonus = zeros(Float64, dur),
     cost_prov = zeros(Float64, dur)      ## cost provisions
     )
-  val_0 = deepcopy(val[1, :])
+  val_0 = DataFrame(deepcopy(val[1, :]))
   return Projection(t_0, dur, cf, val_0, val,
                     tax_rate,
                     tax_credit_0,

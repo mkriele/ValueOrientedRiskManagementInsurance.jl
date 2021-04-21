@@ -795,7 +795,7 @@ ds2[:coc]
 
 coc = 0.06
 balance = vcat(proj.val_0, proj.val)
-length(balance)
+# length(balance)
 tpbe =
   convert(Array,
           balance[:tpg] + balance[:bonus] + balance[:cost_prov])
