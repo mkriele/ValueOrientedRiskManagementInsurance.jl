@@ -4,9 +4,9 @@ function s2riskmargin(p::ProjParam, scr, coc)
                     p.l_ins, p.l_other, p.dyn)
   bal_vec  = vcat(proj.val_0, proj.val)
   discount = 1 ./ cumprod(1 .+ p.cap_mkt.rfr.x)
-  tp = convert(Array, bal_vec[:tpg] +
-                      bal_vec[:bonus] +
-                      bal_vec[:cost_prov])[1:(p.T-p.t_0)]
+  tp = convert(Array, bal_vec[!,:tpg] +
+                      bal_vec[!,:bonus] +
+                      bal_vec[!,:cost_prov])[1:(p.T-p.t_0)]
   src_future = (tp * scr / tp[1])
   coc * src_future ⋅ discount
 end
@@ -71,7 +71,7 @@ bof(bal::DataFrame) =
 Basic own funds for module `md` and scenario `scen`
 """
 bof(md::S2Module, scen::Symbol) =
-  bof(md.balance[md.balance[:scen] .== scen, :])
+  bof(md.balance[md.balance[!,:scen] .== scen, :])
 
 """
 `fdb(md::S2Module, scen::Symbol)`
@@ -79,7 +79,7 @@ bof(md::S2Module, scen::Symbol) =
 Future discretionary benefits for module `md` and scenario `scen`
 """
 fdb(md::S2Module, scen::Symbol) =
-  md.balance[md.balance[:scen] .== scen, :bonus][1,1]
+  md.balance[md.balance[!,:scen] .== scen, :bonus][1,1]
 
 """
 `scr!(mdl::S2Module)`
@@ -324,10 +324,10 @@ Helper function: shock for mortality risk
 **Changed:** `mp::ModelPoint`
 """
 function qxpxshock!(mp::ModelPoint, bio::S2LifeBio, symb::Symbol)
-  mp.prob[:qx] =
-    min.(1, (1 + bio.shock[symb]) * convert(Array, mp.prob[:qx]))
-  mp.prob[:sx] = min.(1 .- mp.prob[:qx], mp.prob[:sx])
-  mp.prob[:px] =  1.0 .- mp.prob[:qx] - mp.prob[:sx]
+  mp.prob[!,:qx] =
+    min.(1, (1 + bio.shock[symb]) * convert(Array, mp.prob[!,:qx]))
+  mp.prob[!,:sx] = min.(1 .- mp.prob[!,:qx], mp.prob[!,:sx])
+  mp.prob[!,:px] =  1.0 .- mp.prob[!,:qx] - mp.prob[!,:sx]
 end
 
 """
@@ -339,21 +339,21 @@ Helper function: shock for surrender risk
 """
 function sxshock!(mp::ModelPoint, bio::S2LifeBio, symb::Symbol)
   if symb == :sx_down
-    mp.prob[:sx] =
-      max.((1 + bio.shock[:sx_down]) * convert(Array, mp.prob[:sx]),
+    mp.prob[!,:sx] =
+      max.((1 + bio.shock[:sx_down]) * convert(Array, mp.prob[!,:sx]),
           convert(Array,
-                  mp.prob[:sx]) .+
+                  mp.prob[!,:sx]) .+
                   bio.shock_param[:sx_down_threshold])
   elseif symb == :sx_up
-    mp.prob[:sx] =
-      min.(1, (1 + bio.shock[symb]) * convert(Array, mp.prob[:sx]))
+    mp.prob[!,:sx] =
+      min.(1, (1 + bio.shock[symb]) * convert(Array, mp.prob[!,:sx]))
   elseif symb == :sx_mass_pension
     mp.prob[1, :sx] = bio.shock[symb]
   elseif symb == :sx_mass_other
     mp.prob[1, :sx] = bio.shock[symb]
   end
-  mp.prob[:qx] = min.(1 .- mp.prob[:sx], mp.prob[:qx])
-  mp.prob[:px] =  1.0 .- mp.prob[:qx] - mp.prob[:sx]
+  mp.prob[!,:qx] = min.(1 .- mp.prob[!,:sx], mp.prob[!,:qx])
+  mp.prob[!,:px] =  1.0 .- mp.prob[!,:qx] - mp.prob[!,:sx]
 end
 
 """
@@ -366,7 +366,7 @@ Shock for mortality catastrophe risk
 function catshock!(mp::ModelPoint, bio::S2LifeBio, symb::Symbol)
   mp.prob[1, :qx] = min(1, mp.prob[1, :qx] + bio.shock[symb])
   mp.prob[1, :sx] = min(1 .- mp.prob[1, :qx], mp.prob[1, :sx])
-  mp.prob[:px] =  1.0 .- mp.prob[:qx] - mp.prob[:sx]
+  mp.prob[!,:px] =  1.0 .- mp.prob[!,:qx] - mp.prob[!,:sx]
 end
 
 ## S2LifeCost ---------------------------------------------------

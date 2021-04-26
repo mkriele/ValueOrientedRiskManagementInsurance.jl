@@ -743,7 +743,7 @@ Needs to be called after the projection is completed
 """
 function valbonus!(rfr::Vector{Float64},
                    proj::Projection)
-  proj.val[:bonus] = pvvec(rfr,  -proj.cf[:bonus])
+  proj.val[!,:bonus] = pvvec(rfr,  -proj.cf[!,:bonus])
   proj.val_0[:bonus] =
     pvprev(rfr[1], -proj.cf[1, :bonus], proj.val[1, :bonus])
 end
@@ -776,8 +776,8 @@ function valcostprov!(rfr::Vector{Float64},
                   proj.val[𝑡 - 1, [:tpg, :bonus, :l_other]])) *
       cash_cost.cum_infl_rel[𝑡] * cash_cost.rel[𝑡]
   end
-  proj.val[:cost_prov] =
-    pvvec(rfr - cash_cost.rel,  proj.cf[:cost_prov])
+  proj.val[!,:cost_prov] =
+    pvvec(rfr - cash_cost.rel,  proj.cf[!,:cost_prov])
   proj.val_0[:cost_prov] = pvprev(rfr[1] - cash_cost.rel[1],
                                   proj.cf[1, :cost_prov],
                                   proj.val[1, :cost_prov])

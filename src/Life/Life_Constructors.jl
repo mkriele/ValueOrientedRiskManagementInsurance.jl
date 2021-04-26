@@ -105,9 +105,9 @@ function ModelPoint(n, t_0, t_start,
   λ[:infl] = deepcopy(cost_infl)
   λ[:cum_infl] = cumprod(1 .+ λ[:infl])
   λ_price = deepcopy(product.λ)[s_future, :]
-  λ_price[:boy] *= n * ins_sum
-  λ_price[:eoy] *= n * ins_sum
-  λ_price[:cum_infl] = cumprod(1 .+ product.λ[:infl])[s_future]
+  λ_price[!,:boy] *= n * ins_sum
+  λ_price[!,:eoy] *= n * ins_sum
+  λ_price[!,:cum_infl] = cumprod(1 .+ product.λ[:infl])[s_future]
   rfr_price_0 = product.rfr[s_0 == 0 ? 1 : s_0]
   rfr_price = product.rfr[s_future]
   tpg_price_0 = tpg(0,
