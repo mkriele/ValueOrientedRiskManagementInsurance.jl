@@ -643,9 +643,7 @@ Market value of assets before payment of dividends
 """
 function investpredivid(τ, invs::InvPort, proj::Projection)
   invs.mv_boy[τ] +
-    sum(convert(Array,
-                proj.cf[τ,
-                        [:invest, :qx, :sx, :px, :λ_eoy, :bonus,
+    sum( Vector( proj.cf[τ, [:invest, :qx, :sx, :px, :λ_eoy, :bonus,
                          :l_other, :tax, :gc]]))
 end
 
@@ -683,7 +681,7 @@ function project!(τ,
           proj.val[τ, :l_other]  )
   bonus!(τ, invs, liabs, dyn, proj, surp_pre_profit_tax_bonus)
   proj.cf[τ, :profit] =
-    sum(convert(Array, proj.cf[τ, [:prem, :invest,
+    sum(Vector( proj.cf[τ, [:prem, :invest,
                                    :qx, :sx, :px, :λ_boy, :λ_eoy,
                                    :Δtpg, :bonus, :l_other]]))
   tax = proj.tax_rate * proj.cf[τ, :profit] ## could be negative
@@ -766,13 +764,13 @@ function valcostprov!(rfr::Vector{Float64},
   cash_cost = deepcopy(invs.igs[:IGCash].cost)
   proj.cf[1, :cost_prov] =
     proj.fixed_cost_gc[1] +
-    sum(convert(Array,
+    sum( Vector(
                 proj.val_0[1, [:tpg, :bonus, :l_other]])) *
     cash_cost.cum_infl_rel[1] * cash_cost.rel[1]
   for 𝑡 ∈ 2:proj.dur
     proj.cf[𝑡, :cost_prov] =
       proj.fixed_cost_gc[𝑡] +
-      sum(convert(Array,
+      sum(Vector(
                   proj.val[𝑡 - 1, [:tpg, :bonus, :l_other]])) *
       cash_cost.cum_infl_rel[𝑡] * cash_cost.rel[𝑡]
   end

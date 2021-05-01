@@ -4,7 +4,7 @@ function s2riskmargin(p::ProjParam, scr, coc)
                     p.l_ins, p.l_other, p.dyn)
   bal_vec  = vcat(proj.val_0, proj.val)
   discount = 1 ./ cumprod(1 .+ p.cap_mkt.rfr.x)
-  tp = convert(Array, bal_vec[!,:tpg] +
+  tp = Vector( bal_vec[!,:tpg] +
                       bal_vec[!,:bonus] +
                       bal_vec[!,:cost_prov])[1:(p.T-p.t_0)]
   src_future = (tp * scr / tp[1])
@@ -325,7 +325,7 @@ Helper function: shock for mortality risk
 """
 function qxpxshock!(mp::ModelPoint, bio::S2LifeBio, symb::Symbol)
   mp.prob[!,:qx] =
-    min.(1, (1 + bio.shock[symb]) * convert(Array, mp.prob[!,:qx]))
+    min.(1, (1 + bio.shock[symb]) * Vector( mp.prob[!,:qx]))
   mp.prob[!,:sx] = min.(1 .- mp.prob[!,:qx], mp.prob[!,:sx])
   mp.prob[!,:px] =  1.0 .- mp.prob[!,:qx] - mp.prob[!,:sx]
 end
@@ -340,13 +340,13 @@ Helper function: shock for surrender risk
 function sxshock!(mp::ModelPoint, bio::S2LifeBio, symb::Symbol)
   if symb == :sx_down
     mp.prob[!,:sx] =
-      max.((1 + bio.shock[:sx_down]) * convert(Array, mp.prob[!,:sx]),
-          convert(Array,
+      max.((1 + bio.shock[:sx_down]) * Vector( mp.prob[!,:sx]),
+          Vector(
                   mp.prob[!,:sx]) .+
                   bio.shock_param[:sx_down_threshold])
   elseif symb == :sx_up
     mp.prob[!,:sx] =
-      min.(1, (1 + bio.shock[symb]) * convert(Array, mp.prob[!,:sx]))
+      min.(1, (1 + bio.shock[symb]) * Vector( mp.prob[!,:sx]))
   elseif symb == :sx_mass_pension
     mp.prob[1, :sx] = bio.shock[symb]
   elseif symb == :sx_mass_other

@@ -458,7 +458,7 @@ tpg_0_1_1 =
 @test proj.val[1,:tpg]-proj.val_0[1,:tpg] ≈ -proj.cf[1,:Δtpg]
 
 # Profit and tax ------------------------------------------------
-@test sum(convert(Array, proj.cf[1, [:prem, :λ_boy, :λ_eoy, :qx,
+@test sum( Vector( proj.cf[1, [:prem, :λ_boy, :λ_eoy, :qx,
                                      :sx, :px, :invest, :Δtpg, :l_other, :bonus]])) ≈
       proj.cf[1, :profit]
 
@@ -570,7 +570,7 @@ for 𝜏 ∈ 1:5
   x = balance[𝜏, :cost_prov]
   for 𝑡 ∈ 𝜏:T
     x *= (1 + rfr[𝑡])
-    x -= sum(convert(Array,
+    x -= sum( Vector(
                      balance[𝑡,
                              [:tpg, :bonus,
                               :l_other, :cost_prov]])) *
@@ -602,8 +602,8 @@ liabs_mod_0 = balance[1,:tpg] +balance[1,:bonus] + balance[1, :cost_prov]
 assets_mod_0 = balance[1,:invest] + proj.tax_credit_0
 bof_0 = assets_mod_0 - liabs_mod_0
 symb_bal = [:invest, :tpg, :l_other, :surplus, :bonus]
-@test convert(Array, balance[1,symb_bal]) ≈
-      convert(Array, s2.balance[1, symb_bal])
+@test Vector( balance[1,symb_bal]) ≈
+      Vector( s2.balance[1, symb_bal])
 @test VORMI.bof(s2, :be) ≈ bof_0
 
 ## S2 Example Interest ------------------------------------------
