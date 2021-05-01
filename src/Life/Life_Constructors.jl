@@ -72,8 +72,8 @@ end
 function Product(rfr_price, prob_price, β_in, λ_price)
   dur = nrow(β_in)
   prob = deepcopy(prob_price)
-  prob[:px] = 1 .- prob[:qx] - prob[:sx]
-  λ_price[:cum_infl] = cumprod(1 .+ λ_price[:infl])
+  prob[!,:px] = 1 .- prob[!,:qx] - prob[!,:sx]
+  λ_price[!,:cum_infl] = cumprod(1 .+ λ_price[!,:infl])
   return Product(dur, rfr_price, prob, β_in, λ_price,
                  premium(1, rfr_price, prob, β_in, λ_price))
 end
@@ -88,26 +88,26 @@ function ModelPoint(n, t_0, t_start,
   dur = product.dur - s_0
   s_future = (s_0 + 1):product.dur
   prob = deepcopy(prob_be)[s_future, :]
-  prob[:sx] *= sx_be_fac
-  prob[:px] = 1 .- prob[:qx] - prob[:sx]
+  prob[!, :sx] *= sx_be_fac
+  prob[!, :px] = 1 .- prob[!,:qx] .- prob[!,:sx]
   lx_boy = zeros(Float64, dur)
   β = DataFrame()
   for 𝑛𝑎𝑚𝑒 ∈ names(product.β)
-    β[𝑛𝑎𝑚𝑒] = n * ins_sum * product.β[s_future, 𝑛𝑎𝑚𝑒]
+    β[!,𝑛𝑎𝑚𝑒] = n * ins_sum * product.β[s_future, 𝑛𝑎𝑚𝑒]
   end
-  β[:prem] *= product.prem_norm
-  β[:sx] *= product.prem_norm
+  β[!,:prem] *= product.prem_norm
+  β[!,:sx] *= product.prem_norm
 
   λ = deepcopy(λ_be)[s_future, :]
-  λ[:boy] *= n * ins_sum
-  λ[:eoy] *= n * ins_sum
+  λ[!, :boy] *= n * ins_sum
+  λ[!, :eoy] *= n * ins_sum
   ## be cost inflation input relates to t_0 not s_0:
-  λ[:infl] = deepcopy(cost_infl)
-  λ[:cum_infl] = cumprod(1 .+ λ[:infl])
+  λ[!,:infl] = deepcopy(cost_infl)
+  λ[!,:cum_infl] = cumprod(1 .+ λ[!,:infl])
   λ_price = deepcopy(product.λ)[s_future, :]
   λ_price[!,:boy] *= n * ins_sum
   λ_price[!,:eoy] *= n * ins_sum
-  λ_price[!,:cum_infl] = cumprod(1 .+ product.λ[:infl])[s_future]
+  λ_price[!,:cum_infl] = cumprod(1 .+ product.λ[!,:infl])[s_future]
   rfr_price_0 = product.rfr[s_0 == 0 ? 1 : s_0]
   rfr_price = product.rfr[s_future]
   tpg_price_0 = tpg(0,

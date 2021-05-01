@@ -139,19 +139,19 @@ end
 Calculate the premium of a product
 """
 function premium(ins_sum, rfr, prob, β, λ)
-  lx_boy = [1; cumprod(prob[:px])[1:end-1]]
+  lx_boy = [1; cumprod(prob[!,:px])[1:end-1]]
   v_eoy = 1 ./ cumprod(1 .+ rfr)
   v_boy = [1; v_eoy[1:end-1]]
   num =
     sum(lx_boy .* ins_sum .*
-        (v_boy .* λ[:boy] .* λ[:cum_infl] ./ (1 .+ λ[:infl]) .+
-           v_eoy .* (λ[:eoy] .* λ[:cum_infl] .+
-                       prob[:px] .* β[:px] .+
-                       prob[:qx] .* β[:qx])
+        (v_boy .* λ[!,:boy] .* λ[!,:cum_infl] ./ (1 .+ λ[!,:infl]) .+
+           v_eoy .* (λ[!,:eoy] .* λ[!,:cum_infl] .+
+                       prob[!,:px] .* β[!,:px] .+
+                       prob[!,:qx] .* β[!,:qx])
          ))
   denom =
-    sum(lx_boy .* β[:prem] .*
-        (v_boy - v_eoy .* prob[:sx] .* β[:sx]))
+    sum(lx_boy .* β[!,:prem] .*
+        (v_boy - v_eoy .* prob[!,:sx] .* β[!,:sx]))
   return num / denom
 end
 
@@ -744,7 +744,7 @@ Needs to be called after the projection is completed
 function valbonus!(rfr::Vector{Float64},
                    proj::Projection)
   proj.val[!,:bonus] = pvvec(rfr,  -proj.cf[!,:bonus])
-  proj.val_0[:bonus] =
+  proj.val_0[!,:bonus] .=
     pvprev(rfr[1], -proj.cf[1, :bonus], proj.val[1, :bonus])
 end
 
@@ -778,7 +778,7 @@ function valcostprov!(rfr::Vector{Float64},
   end
   proj.val[!,:cost_prov] =
     pvvec(rfr - cash_cost.rel,  proj.cf[!,:cost_prov])
-  proj.val_0[:cost_prov] = pvprev(rfr[1] - cash_cost.rel[1],
+  proj.val_0[!,:cost_prov] .= pvprev(rfr[1] - cash_cost.rel[1],
                                   proj.cf[1, :cost_prov],
                                   proj.val[1, :cost_prov])
 end
