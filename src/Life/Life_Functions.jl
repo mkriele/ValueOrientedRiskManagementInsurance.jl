@@ -139,19 +139,19 @@ end
 Calculate the premium of a product
 """
 function premium(ins_sum, rfr, prob, β, λ)
-  lx_boy = [1; cumprod(prob[:px])[1:end-1]]
+  lx_boy = [1; cumprod(prob[!,:px])[1:end-1]]
   v_eoy = 1 ./ cumprod(1 .+ rfr)
   v_boy = [1; v_eoy[1:end-1]]
   num =
     sum(lx_boy .* ins_sum .*
-        (v_boy .* λ[:boy] .* λ[:cum_infl] ./ (1 .+ λ[:infl]) .+
-           v_eoy .* (λ[:eoy] .* λ[:cum_infl] .+
-                       prob[:px] .* β[:px] .+
-                       prob[:qx] .* β[:qx])
+        (v_boy .* λ[!,:boy] .* λ[!,:cum_infl] ./ (1 .+ λ[!,:infl]) .+
+           v_eoy .* (λ[!,:eoy] .* λ[!,:cum_infl] .+
+                       prob[!,:px] .* β[!,:px] .+
+                       prob[!,:qx] .* β[!,:qx])
          ))
   denom =
-    sum(lx_boy .* β[:prem] .*
-        (v_boy - v_eoy .* prob[:sx] .* β[:sx]))
+    sum(lx_boy .* β[!,:prem] .*
+        (v_boy - v_eoy .* prob[!,:sx] .* β[!,:sx]))
   return num / denom
 end
 
@@ -643,9 +643,7 @@ Market value of assets before payment of dividends
 """
 function investpredivid(τ, invs::InvPort, proj::Projection)
   invs.mv_boy[τ] +
-    sum(convert(Array,
-                proj.cf[τ,
-                        [:invest, :qx, :sx, :px, :λ_eoy, :bonus,
+    sum( Vector( proj.cf[τ, [:invest, :qx, :sx, :px, :λ_eoy, :bonus,
                          :l_other, :tax, :gc]]))
 end
 
@@ -683,7 +681,7 @@ function project!(τ,
           proj.val[τ, :l_other]  )
   bonus!(τ, invs, liabs, dyn, proj, surp_pre_profit_tax_bonus)
   proj.cf[τ, :profit] =
-    sum(convert(Array, proj.cf[τ, [:prem, :invest,
+    sum(Vector( proj.cf[τ, [:prem, :invest,
                                    :qx, :sx, :px, :λ_boy, :λ_eoy,
                                    :Δtpg, :bonus, :l_other]]))
   tax = proj.tax_rate * proj.cf[τ, :profit] ## could be negative
@@ -743,8 +741,8 @@ Needs to be called after the projection is completed
 """
 function valbonus!(rfr::Vector{Float64},
                    proj::Projection)
-  proj.val[:bonus] = pvvec(rfr,  -proj.cf[:bonus])
-  proj.val_0[:bonus] =
+  proj.val[!,:bonus] = pvvec(rfr,  -proj.cf[!,:bonus])
+  proj.val_0[!,:bonus] .=
     pvprev(rfr[1], -proj.cf[1, :bonus], proj.val[1, :bonus])
 end
 
@@ -766,19 +764,19 @@ function valcostprov!(rfr::Vector{Float64},
   cash_cost = deepcopy(invs.igs[:IGCash].cost)
   proj.cf[1, :cost_prov] =
     proj.fixed_cost_gc[1] +
-    sum(convert(Array,
+    sum( Vector(
                 proj.val_0[1, [:tpg, :bonus, :l_other]])) *
     cash_cost.cum_infl_rel[1] * cash_cost.rel[1]
   for 𝑡 ∈ 2:proj.dur
     proj.cf[𝑡, :cost_prov] =
       proj.fixed_cost_gc[𝑡] +
-      sum(convert(Array,
+      sum(Vector(
                   proj.val[𝑡 - 1, [:tpg, :bonus, :l_other]])) *
       cash_cost.cum_infl_rel[𝑡] * cash_cost.rel[𝑡]
   end
-  proj.val[:cost_prov] =
-    pvvec(rfr - cash_cost.rel,  proj.cf[:cost_prov])
-  proj.val_0[:cost_prov] = pvprev(rfr[1] - cash_cost.rel[1],
+  proj.val[!,:cost_prov] =
+    pvvec(rfr - cash_cost.rel,  proj.cf[!,:cost_prov])
+  proj.val_0[!,:cost_prov] .= pvprev(rfr[1] - cash_cost.rel[1],
                                   proj.cf[1, :cost_prov],
                                   proj.val[1, :cost_prov])
 end

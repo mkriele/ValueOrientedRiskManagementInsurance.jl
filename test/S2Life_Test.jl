@@ -19,7 +19,7 @@ for 𝑡 ∈ 1: T
   if 𝑡 > 1
     @test λ_price[𝑡, :boy] == 0
   end
-  @test  convert(Array, β[:sx]) == cumsum(fill(β[1, :sx], 5))
+  @test  convert(Array, β[!,:sx]) == cumsum(fill(β[1, :sx], 5))
   ## following is used in presentation of pricing calculation:
   @test prob_price[𝑡, :qx] ≈ (10 + 𝑡 -1)/10000
 end
@@ -29,16 +29,16 @@ for 𝑖 ∈ 1:nrow(df_portfolio)
 end
 
 ## Premium ------------------------------------------------------
-prob_price[:px] = 1 .- prob_price[:, :qx] .- prob_price[1, :sx]
+prob_price[!,:px] = 1 .- prob_price[:, :qx] .- prob_price[1, :sx]
 lx_price_boy =
-  convert(Array, cumprod(prob_price[:px]) ./ prob_price[:px])
+  convert(Array, cumprod(prob_price[!,:px]) ./ prob_price[!,:px])
 
 v_price_eoy = cumprod(1 ./ (1 .+ rfr_price))
 v_price_boy = v_price_eoy .* (1 .+ rfr_price)
 
-infl_price_eoy = convert(Array, cumprod(1 .+ λ_price[:infl]))
+infl_price_eoy = convert(Array, cumprod(1 .+ λ_price[!,:infl]))
 infl_price_boy =
-  infl_price_eoy ./ convert(Array, 1 .+ λ_price[:infl])
+  infl_price_eoy ./ convert(Array, 1 .+ λ_price[!,:infl])
 
 prem_price_ratio =
   sum(lx_price_boy .* v_price_boy .*
@@ -142,7 +142,7 @@ t_bonus_quota = dyn.bonus_factor * (y_invest - rfr_price)
 
 sx_basis = Array{Vector{Float64}}(undef, nrow(df_portfolio))
 for 𝑖 ∈ 1:nrow(df_portfolio)
-  sx_basis[𝑖] = convert(Array, liab_ins.mps[𝑖].prob[:sx])
+  sx_basis[𝑖] = convert(Array, liab_ins.mps[𝑖].prob[!,:sx])
 end
 
 v_eoy = cumprod(1 ./ (1 .+ rfr))
@@ -152,12 +152,12 @@ infl_eoy = cumprod(1 .+ cost_infl_be[end])
 infl_boy = infl_eoy ./ (1 .+ cost_infl_be[end])
 
 prob = deepcopy(prob_be)
-prob[:px] = 1 .- prob[:qx] - prob[:sx]
+prob[!,:px] = 1 .- prob[!,:qx] - prob[!,:sx]
 
 rfr_cost = rfr - λ_invest[:IGCash][:, :rel]
 
 function tpberec(tp_next, t, τ, prob_sx)
-  prob_px = 1 .- prob[:qx] - prob_sx
+  prob_px = 1 .- prob[!,:qx] - prob_sx
 
   - prem_price +
     λ_be[t + τ - t_0 + 1, :boy] * infl_boy[t + 1] * ins_sum +
@@ -174,8 +174,8 @@ t=3
 prem_price
 mp = deepcopy(liab_ins.mps[d])
 fn = df_portfolio[d, :n]
-prob_sx = convert(Array, prob[:sx]) * df_portfolio[d, :sx_be_fac]
-prob_px = 1 .- prob[:qx] - prob_sx
+prob_sx = convert(Array, prob[!,:sx]) * df_portfolio[d, :sx_be_fac]
+prob_px = 1 .- prob[!,:qx] - prob_sx
 @test fn * prem_price ≈ mp.β[t+1, :prem]
 @test mp.λ[t + 1, :boy] *  mp.λ[t + 1, :cum_infl] /
       (1 + mp.λ[t + 1, :infl]) ≈
@@ -212,7 +212,7 @@ for 𝑑 ∈ 1:nrow(df_portfolio)
 
   end
 end
-tmp_gc /= sum(df_portfolio[:n])
+tmp_gc /= sum(df_portfolio[!,:n])
 
 @test tmp_gc ≈ liab_ins.gc
 
@@ -274,7 +274,7 @@ for 𝑑 = 1:(T-1)
 end
 
 ## gc surplus adjustment ----------------------------------------
-@test proj.cf[:gc] ≈
+@test proj.cf[!,:gc] ≈
       (proj.val_0[1, :invest] -
         proj.val_0[1, :tpg]-
         proj.val_0[1, :l_other]) *
@@ -290,7 +290,7 @@ for 𝑑 ∈ 1:nrow(df_portfolio)
   # d = 4
   tp[𝑑] = zeros(Float64, T)
   local prob_sx =
-    convert(Array, prob[:sx]) * df_portfolio[𝑑, :sx_be_fac]
+    convert(Array, prob[!,:sx]) * df_portfolio[𝑑, :sx_be_fac]
   local τ = t_0 - df_portfolio[𝑑, :t_start]
   for 𝑡 ∈ (T-1-τ):-1:(1)
     tp[𝑑][𝑡] = tpberec(tp[𝑑][𝑡 + 1], 𝑡, τ, prob_sx)
@@ -434,10 +434,10 @@ cf_invest_one =
 probabs = Array{DataFrame}(undef, nrow(df_portfolio))
 for 𝑑 ∈ 1:nrow(df_portfolio)
   probabs[𝑑] = deepcopy(prob_be)
-  probabs[𝑑][:sx] =
-    δ_sx_one[𝑑] * convert(Array, probabs[𝑑][:sx]) *
+  probabs[𝑑][!,:sx] =
+    δ_sx_one[𝑑] * convert(Array, probabs[𝑑][!,:sx]) *
     df_portfolio[𝑑, :sx_be_fac]
-  probabs[𝑑][:px] = 1 .- probabs[𝑑][:qx] - probabs[𝑑][:sx]
+  probabs[𝑑][!,:px] = 1 .- probabs[𝑑][!,:qx] - probabs[𝑑][!,:sx]
 end
 
 ## We recalculate technical provisions with updated sx
@@ -445,7 +445,7 @@ for 𝑑 ∈ 1:nrow(df_portfolio)
   tp[𝑑] = zeros(Float64, T)
   local τ = t_0 - df_portfolio[𝑑, :t_start]
   for 𝑡 ∈ (T-1-τ):-1:(1)
-    tp[𝑑][𝑡] = tpberec(tp[𝑑][𝑡 + 1], 𝑡, τ, probabs[𝑑][:sx])
+    tp[𝑑][𝑡] = tpberec(tp[𝑑][𝑡 + 1], 𝑡, τ, probabs[𝑑][!,:sx])
   end
 end
 
@@ -458,7 +458,7 @@ tpg_0_1_1 =
 @test proj.val[1,:tpg]-proj.val_0[1,:tpg] ≈ -proj.cf[1,:Δtpg]
 
 # Profit and tax ------------------------------------------------
-@test sum(convert(Array, proj.cf[1, [:prem, :λ_boy, :λ_eoy, :qx,
+@test sum( Vector( proj.cf[1, [:prem, :λ_boy, :λ_eoy, :qx,
                                      :sx, :px, :invest, :Δtpg, :l_other, :bonus]])) ≈
       proj.cf[1, :profit]
 
@@ -495,28 +495,28 @@ invest_eoy_prev =
             proj.val[𝑡-1, :invest] for 𝑡 ∈ 1:T]
 invest_boy =
   convert(Array,
-          invest_eoy_prev + proj.cf[:prem] + proj.cf[:λ_boy])
+          invest_eoy_prev + proj.cf[!,:prem] + proj.cf[!,:λ_boy])
 invest_eoy_pre_divid =
-  invest_eoy_prev + proj.cf[:profit] + proj.cf[:tax] -
-  proj.cf[:Δtpg] + proj.cf[:gc]
+  invest_eoy_prev + proj.cf[!,:profit] + proj.cf[!,:tax] -
+  proj.cf[!,:Δtpg] + proj.cf[!,:gc]
 
 @test invest_boy ≈ invs.mv_boy
 @test invest_eoy_pre_divid ≈
       Float64[VORMI.investpredivid(𝑡, invs, proj) for 𝑡 ∈ 1:T]
 
-val_liab = convert(Array, proj.val[:tpg] .- proj.val[:l_other])
+val_liab = convert(Array, proj.val[!,:tpg] .- proj.val[!,:l_other])
 q_surp =
-  ((invest_eoy_pre_divid .- proj.val[:tpg] .-
-    proj.val[:l_other]) ./
-  (proj.val[:tpg] + proj.val[:l_other]))
+  ((invest_eoy_pre_divid .- proj.val[!,:tpg] .-
+    proj.val[!,:l_other]) ./
+  (proj.val[!,:tpg] + proj.val[!,:l_other]))
 
 ## The following was used in the text:
 @test q_surp[1] > dyn.quota_surp
 @test  min.(0, convert(Array,
-              (1+dyn.quota_surp) * ( proj.val[:tpg] +
-                                    proj.val[:l_other])-
+              (1+dyn.quota_surp) * ( proj.val[!,:tpg] +
+                                    proj.val[!,:l_other])-
                                     invest_eoy_pre_divid)) ≈
-      proj.cf[:divid]
+      proj.cf[!,:divid]
 
 ## Dividend mechanism works:
 for 𝑡 ∈ 1:T
@@ -546,15 +546,15 @@ end
 fdb_0 =
   (fdb[1] -  proj.cf[1, :bonus]) /  (1 .+ rfr[1])
 
-@test -cumprod(1 ./ (1 .+ rfr)) ⋅ proj.cf[:bonus] ≈
+@test -cumprod(1 ./ (1 .+ rfr)) ⋅ proj.cf[!,:bonus] ≈
       proj.val_0[1,:bonus]
 @test fdb_0 ≈ proj.val_0[1,:bonus]
-@test fdb ≈ proj.val[:bonus]
+@test fdb ≈ proj.val[!,:bonus]
 
 balance = vcat(proj.val_0, proj.val)
 ## here reserves for boni are considered part of capital.
-@test balance[:surplus] ≈
-      balance[:invest] - balance[:tpg] - balance[:l_other]
+@test balance[!,:surplus] ≈
+      balance[!,:invest] - balance[!,:tpg] - balance[!,:l_other]
 
 ## recall that balance[t, :] = proj.val[t-1, :] for t>1
 for 𝑡 ∈ 2:(T+1)
@@ -570,7 +570,7 @@ for 𝜏 ∈ 1:5
   x = balance[𝜏, :cost_prov]
   for 𝑡 ∈ 𝜏:T
     x *= (1 + rfr[𝑡])
-    x -= sum(convert(Array,
+    x -= sum( Vector(
                      balance[𝑡,
                              [:tpg, :bonus,
                               :l_other, :cost_prov]])) *
@@ -602,8 +602,8 @@ liabs_mod_0 = balance[1,:tpg] +balance[1,:bonus] + balance[1, :cost_prov]
 assets_mod_0 = balance[1,:invest] + proj.tax_credit_0
 bof_0 = assets_mod_0 - liabs_mod_0
 symb_bal = [:invest, :tpg, :l_other, :surplus, :bonus]
-@test convert(Array, balance[1,symb_bal]) ≈
-      convert(Array, s2.balance[1, symb_bal])
+@test Vector( balance[1,symb_bal]) ≈
+      Vector( s2.balance[1, symb_bal])
 @test VORMI.bof(s2, :be) ≈ bof_0
 
 ## S2 Example Interest ------------------------------------------
@@ -629,8 +629,8 @@ ind_mkt_eq = findfirst( (in)([:S2MktEq]), ds2_mkt[:mdl])
 s2_mkt_eq = s2.mds[ind_mkt].mds[ind_mkt_eq]
 bal = s2_mkt_eq.balance
 
-@test bal[bal[:scen] .== :type_1,:invest][1] ≈
-      (1 + eq_shock[:type_1]) * sum(df_stock[:mv_0]) + sum(df_cash[:mv_0])
+@test bal[bal[!,:scen] .== :type_1,:invest][1] ≈
+      (1 + eq_shock[:type_1]) * sum(df_stock[!,:mv_0]) + sum(df_cash[!,:mv_0])
 
 ## S2 Example Market risk----------------------------------------
 ind_mkt = findfirst( (in)([:S2Mkt]), ds2[:mdl])
@@ -795,10 +795,10 @@ ds2[:coc]
 
 coc = 0.06
 balance = vcat(proj.val_0, proj.val)
-length(balance)
+# length(balance)
 tpbe =
   convert(Array,
-          balance[:tpg] + balance[:bonus] + balance[:cost_prov])
+          balance[!,:tpg] + balance[!,:bonus] + balance[!,:cost_prov])
 src_future = (tpbe * s2.scr / tpbe[1])[1:T]
 discount = 1 ./ cumprod(1 .+ rfr)
 risk_margin = coc * src_future ⋅ discount

@@ -15,7 +15,7 @@ insurance_input =
   re_ceded =    [0.25,  0.20,  0.20],
   re_costs =    [-0.06, -0.06, -0.06])
 ## add a column with an explicit counter: the lines of business
-insurance_input[:ctr] = collect(1:nrow(insurance_input))
+insurance_input[!,:ctr] = collect(1:nrow(insurance_input))
 
 invest_input =
   DataFrame(
@@ -26,7 +26,7 @@ invest_input =
   mean = [0.05],
   sd =[0.02])
 ## add a column with an explicit counter: investments
-invest_input[:ctr] = [nrow(insurance_input)+1]
+invest_input[!,:ctr] = [nrow(insurance_input)+1]
 
 tau_kendall = Real[1.0  0.3  0.2  0.0;
                    0.3  1.0  0.6  0.0;

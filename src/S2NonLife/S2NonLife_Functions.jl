@@ -27,17 +27,17 @@ function NLLob(lob::DataFrame,
   ## calculate statistical parameters
   vol_prem = max(prem[PY], prem[CY])
   np_fac =
-    df_lobs_prem_risk[df_lobs_prem_risk[:abbrev] .== name,
+    df_lobs_prem_risk[df_lobs_prem_risk[!,:abbrev] .== name,
                       :re_np_prem][1,1]
   vol_prem_vc =
-    df_lobs_prem_risk[df_lobs_prem_risk[:abbrev] .== name,
+    df_lobs_prem_risk[df_lobs_prem_risk[!,:abbrev] .== name,
                       :prem_gross_vc][1,1]
   vol_prem_sd = vol_prem * vol_prem_vc * np_fac
   β =  β_raw_vec / sum(β_raw_vec)
   vol_res =
     lob[1, :res_undisc_py] * (β ⋅ cumprod(1 ./ (1 .+ rf)))
   vol_res_vc =
-    df_lobs_prem_risk[df_lobs_prem_risk[:abbrev] .== name,
+    df_lobs_prem_risk[df_lobs_prem_risk[!,:abbrev] .== name,
                       :res_net_vc][1,1]
   vol_res_sd = vol_res * vol_res_vc
   vol_prem_res_sd =

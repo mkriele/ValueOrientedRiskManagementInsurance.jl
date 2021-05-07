@@ -73,15 +73,15 @@ merge!(λ_invest,
 eq2type = Dict{Symbol,Symbol}(:stock_index => :type_1)
 
 ## initial target allocation == current relative allocation -----
-mv_total_0 = sum(df_cash[:mv_0]) + sum(df_stock[:mv_0])
+mv_total_0 = sum(df_cash[!,:mv_0]) + sum(df_stock[!,:mv_0])
 
 dfalloc(dur, df, mv_total_0, sp_2_cqs) =
-  Alloc(convert(Array, df[:name]),
-        vcat(sum(df[:mv_0]) / mv_total_0,
+  Alloc(convert(Array, df[!,:name]),
+        vcat(sum(df[!,:mv_0]) / mv_total_0,
              zeros(Float64, dur - 1)),
-        vcat(vec(df[:mv_0] / sum(df[:mv_0]))',
+        vcat(vec(df[!,:mv_0] / sum(df[!,:mv_0]))',
              zeros(Float64, dur-1, nrow(df))),
-        convert(Array, df[:lgd]),
+        convert(Array, df[!,:lgd]),
         Symbol[sp_2_cqs[df[𝑖,:rating]] for 𝑖 ∈ 1:nrow(df)])
 
 allocs = Dict{Symbol, Alloc}()
@@ -102,7 +102,7 @@ df_portfolio = DataFrame(
 ## biometric probabilities
 ## initial estimate at start of  projection, based on
 ## capital market and bonus declaration at time t_0
-prob_be =  DataFrame(qx = prob_price[:qx] .- 0.0001,
+prob_be =  DataFrame(qx = prob_price[!,:qx] .- 0.0001,
                      sx = 0.1 * reverse(collect(0:(T-1)))/(T-1))
 
 ## cost profile

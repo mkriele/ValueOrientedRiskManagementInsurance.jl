@@ -11,8 +11,8 @@ println("Start S2NonLife.jl")
 lobs = Array{NLLob}(undef, 0)
 
 for lob in select_lob_names
-  push!(lobs, NLLob(df_lobs[df_lobs[:name] .== lob, :],
-                    convert(Array, β_raw[lob]),
+  push!(lobs, NLLob(df_lobs[df_lobs[!,:name] .== lob, :],
+                    convert(Array, β_raw[!,lob]),
                     rf,
                     corr_prem_res, df_lobs_prem_risk))
 end

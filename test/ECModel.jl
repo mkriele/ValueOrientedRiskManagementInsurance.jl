@@ -72,8 +72,8 @@ function riskprice(ins_input::DataFrame,
   rorac_gross_f = zeros(Real, i_max)
   Δp = zeros(Real, i_max + 1)
   Δp_tol  = 1e-5      ## break criterion : minimum price change
-  row_l = ins[ins[:name] .== "Liability", :ctr][1,1]
-  row_f = ins[ins[:name] .== "Fire", :ctr][1,1]
+  row_l = ins[ins[!,:name] .== "Liability", :ctr][1,1]
+  row_f = ins[ins[!,:name] .== "Fire", :ctr][1,1]
   if (row_l != ins[row_l, :ctr]) | (row_f != ins[row_f, :ctr])
     error("row_l ($row_l) or row_f ($row_f) does not match.")
   end
@@ -188,7 +188,7 @@ function optrefire(ins_input::DataFrame,
   profit_net = zeros(Real, n_points)
   ec_net = zeros(Real, n_points)
   rorac_net = zeros(Real, n_points)
-  row_f = ins[ins[:name] .== "Fire", :ctr][1,1]
+  row_f = ins[ins[!,:name] .== "Fire", :ctr][1,1]
   if row_f != ins[row_f, :ctr]
     error("row_f ($row_f) does not match.")
   end
@@ -293,7 +293,7 @@ function optreeva(ins_input::DataFrame,
       project(ins, inv_input, tau_kendall,
               n_scen, α, s, cost_fixed)
     avg_ceded[𝑖] =
-      ins[:re_ceded] ⋅ ins[:premium] /sum(ins[:premium])
+      ins[!,:re_ceded] ⋅ ins[!,:premium] /sum(ins[!,:premium])
     eva_net[𝑖] =
       total.net.profit_mean - hurdle * total.net.eco_cap
     if eva_net[𝑖] > eva_net_opt
@@ -371,12 +371,12 @@ end
 
 #################################################################
 row_f =
-  insurance_input[insurance_input[:name] .== "Fire", :ctr][1,1]
+  insurance_input[insurance_input[!,:name] .== "Fire", :ctr][1,1]
 row_l =
-  insurance_input[insurance_input[:name] .==
+  insurance_input[insurance_input[!,:name] .==
   "Liability", :ctr][1,1]
 row_t =
-  insurance_input[insurance_input[:name] .== "Theft", :ctr][1,1]
+  insurance_input[insurance_input[!,:name] .== "Theft", :ctr][1,1]
 
 pl_fire_exact_gross =
   (1 + s -
@@ -480,8 +480,8 @@ avg_ceded_opt_oreva, eva_net_opt_oreva =
            α,  s, costs_fixed, n_cloud, hurdle)
 
 avg_ceded_ofr =
-  ins_input_ofr[:re_ceded] ⋅ ins_input_ofr[:premium] /
-  sum(ins_input_ofr[:premium])
+  ins_input_ofr[!,:re_ceded] ⋅ ins_input_ofr[!,:premium] /
+  sum(ins_input_ofr[!,:premium])
 eva_net_ofr = profit_net_ofr_opt - hurdle * ec_net_ofr_opt
 
 

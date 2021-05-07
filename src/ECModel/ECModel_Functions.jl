@@ -137,7 +137,7 @@ function initialize(insurance_input::DataFrame,
   bu = Array{BusinessUnit}(undef, n_bu)
   distr = Array{ContinuousUnivariateDistribution}(undef, n_bu)
 
-  for 𝑖 ∈ insurance_input[:ctr]
+  for 𝑖 ∈ insurance_input[!,:ctr]
     bu[𝑖] =
       BuInsurance(insurance_input[𝑖, :id],
                   insurance_input[𝑖, :name],
