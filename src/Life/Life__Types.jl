@@ -3,7 +3,7 @@ export Invest, InvestStock, InvestCash
 export InvestGroup, IGCost, IGStock, IGCash
 export InvPort
 export Alloc
-export Product, ModelPoint, LiabIns
+export ProductIns, ModelPoint, LiabIns
 export LiabOther, Debt
 export Dynamic
 export Projection
@@ -180,7 +180,7 @@ end
 ## insurance liabilities ----------------------------------------
 
 "Life insurance product / tariff"
-mutable struct Product
+mutable struct ProductIns
   "`Int`: Duration of product"
   dur::Int
   "`Vector{Float64}`: Pricing discount rate for each year"

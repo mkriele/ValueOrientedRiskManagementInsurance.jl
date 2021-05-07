@@ -69,12 +69,12 @@ function InvPort(t_0,
 end
 
 ## insurance liabilities ----------------------------------------
-function Product(rfr_price, prob_price, β_in, λ_price)
+function ProductIns(rfr_price, prob_price, β_in, λ_price)
   dur = nrow(β_in)
   prob = deepcopy(prob_price)
   prob[!,:px] = 1 .- prob[!,:qx] - prob[!,:sx]
   λ_price[!,:cum_infl] = cumprod(1 .+ λ_price[!,:infl])
-  return Product(dur, rfr_price, prob, β_in, λ_price,
+  return ProductIns(dur, rfr_price, prob, β_in, λ_price,
                  premium(1, rfr_price, prob, β_in, λ_price))
 end
 

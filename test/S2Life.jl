@@ -14,7 +14,7 @@ cap_mkt = CapMkt(deepcopy(proc_stock), deepcopy(proc_rfr))
 invs_par = Array{Any}(undef, 0)
 push!(invs_par, mv_total_0, allocs, λ_invest)
 invs = InvPort(t_0, T, cap_mkt, invs_par...)
-product = Product(rfr_price, prob_price, β, λ_price)
+product = ProductIns(rfr_price, prob_price, β, λ_price)
 liab_ins =
   LiabIns(t_0, prob_be, λ_be, cost_infl_be, product, df_portfolio)
 liab_other = LiabOther(t_0, df_sub_debt)
