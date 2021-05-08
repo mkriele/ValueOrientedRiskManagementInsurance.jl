@@ -1,7 +1,7 @@
 name = "ValueOrientedRiskManagementInsurance"
 uuid = "8c03090b-494f-4d55-b8bd-6cadd69a7233"
 authors = ["reumle <jpojpoj@gmail.com> and contributors"]
-version = "1.0.2"
+version = "1.0.3"
 
 [deps]
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"

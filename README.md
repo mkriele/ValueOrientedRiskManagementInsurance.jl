@@ -1,13 +1,15 @@
 # ValueOrientedRiskManagementInsurance
 
-[![Build Status](https://travis-ci.org/mkriele/ValueOrientedRiskManagementInsurance.jl.svg?branch=master)](https://travis-ci.org/mkriele/ValueOrientedRiskManagementInsurance.jl)
-
-**The master branch of this package requires Julia 1.0.x.**  
+[![Build Status](https://www.travis-ci.com/mkriele/ValueOrientedRiskManagementInsurance.jl.svg?branch=master)](https://www.travis-ci.com/mkriele/ValueOrientedRiskManagementInsurance.jl)
 
 
-The package provides example calculations for the of the book
+The package provides example calculations for the  book
 
 > Kriele M. and Wolf, J. [_Wertorientiertes Risikomanagement von  Versicherungsunternehmen_](http://www.springer.com/de/book/9783662502563), 2nd edition, Springer-Verlag, Berlin Heidelberg,  2016
+
+**Disclaimers:**  
+1) The code in this package has been written several years ago (mostly Julia version 0.3.x and Julia version 0.4.x).  In the meanwhile, both Julia and the package `DataFrames` have improved significantly. While the code still works, it does not reflect today's best practice.
+2) The standard model for the Swiss Solvency Test (SST) has changed and  been improved since the publication of this book. Both the description of the model and the code presented here are outdated.  The Swiss Financial Market Supervisory Authority [_FINMA_](https://www.finma.ch/en/) provides an open source R Tool (GNU License, Version 3) of the current model.
 
 Any futher development for future English versions (_Value-Oriented Risk Management of Insurance Companies_) or German versions of this book will take place in the separate GitHub repository [_RMInsurance.jl_](https://github.com/mkriele/RMInsurance.jl).  
 
@@ -15,12 +17,15 @@ Any futher development for future English versions (_Value-Oriented Risk Managem
 
 ## The correct checkout for each book edition and each supported Julia version
 
-| Julia version   | Branch       | Errata                |
-|:---------------:|:------------:|:---------------------:|
-| 0.4.x           |  de_2ed      | Korrekturen.md        |
-| 0.5.x           |  de_2ed      | Korrekturen.md        |
-| 0.6.x           |  de_2ed_j0.6 | Korrekturen.md        |
-| 1.0.x           |  master      | Korrekturen.md        |
+| Julia version   | Version | Branch       | Errata                | 
+|:---------------:|:------- |:------------:|:---------------------:|
+| 0.4.x           |         |  de_2ed      | Korrekturen.md        |
+| 0.5.x           |         |  de_2ed      | Korrekturen.md        |
+| 0.6.x           |         |  de_2ed_j0.6 | Korrekturen.md        |
+| 1.0.x           |  1.0.0  |  master      | Korrekturen.md        |
+| 1.6.x           |  1.0.3  |  master      | Korrekturen.md        |
+
+Because of package dependencies it is recommended to use  Version 1.0.3 or later (and Julia Version 1.6 or later). 
 
 **Errata:** Corrections of errors in the book.  We list all errors we are aware of. In order to display the text, simply click on the corresponding file name in the list of linked documents above.
 
@@ -63,6 +68,10 @@ The internal economic capital model is a highly simplified Monte Carlo model of 
 ## Files in the Folder "test"
 
 The folder "test" contains the files files *x_Input.jl*, *x.jl*, and *x_Test.jl* for each of the four parts *x* ∈ {*SSTLife*, *S2Life*, *S2NonLife*, *ECModel*}. The files *x_Input.jl* and *x.jl* replicate the calculation in the book and the files *x_Test.jl* are used for automatic testing.  In addition, the file *Life_Input.jl* contains the input data for the example insurer, which is used  in the S2 life calculation.  *runtests.jl* controls the automated tests.
+
+## Acknowledgements
+
+@reumle updated the code to Julia 1.6.1 and DataFrames 1.0.0!
 
 ## Footnotes
 
