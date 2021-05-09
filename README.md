@@ -1,6 +1,7 @@
 # ValueOrientedRiskManagementInsurance
 
-[![Build Status](https://www.travis-ci.com/mkriele/ValueOrientedRiskManagementInsurance.jl.svg?branch=master)](https://www.travis-ci.com/mkriele/ValueOrientedRiskManagementInsurance.jl)
+[![CI](https://github.com/mkriele/ValueOrientedRiskManagementInsurance.jl/workflows/CI/badge.svg)](https://github.com/mkriele/ValueOrientedRiskManagementInsurance.jl/actions)
+
 
 
 The package provides example calculations for the  book
