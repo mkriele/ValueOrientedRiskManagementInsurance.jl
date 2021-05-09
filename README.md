@@ -24,9 +24,9 @@ Any futher development for future English versions (_Value-Oriented Risk Managem
 | 0.5.x           |         |  de_2ed      | Korrekturen.md        |
 | 0.6.x           |         |  de_2ed_j0.6 | Korrekturen.md        |
 | 1.0.x           |  1.0.0  |  master      | Korrekturen.md        |
-| 1.6.x           |  1.0.3  |  master      | Korrekturen.md        |
+| 1.6.x           |  1.1.0  |  master      | Korrekturen.md        |
 
-Because of package dependencies it is recommended to use  Version 1.0.3 or later (and Julia Version 1.6 or later). 
+Because of package dependencies it is recommended to use  Version 1.1.0 or later (and Julia Version 1.6 or later). 
 
 **Errata:** Corrections of errors in the book.  We list all errors we are aware of. In order to display the text, simply click on the corresponding file name in the list of linked documents above.
 
