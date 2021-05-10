@@ -18,13 +18,13 @@ Any futher development for future English versions (_Value-Oriented Risk Managem
 
 ## The correct checkout for each book edition and each supported Julia version
 
-| Julia version   | Version | Branch       | Errata                | 
-|:---------------:|:------- |:------------:|:---------------------:|
-| 0.4.x           |         |  de_2ed      | Korrekturen.md        |
-| 0.5.x           |         |  de_2ed      | Korrekturen.md        |
-| 0.6.x           |         |  de_2ed_j0.6 | Korrekturen.md        |
-| 1.0.x           |  1.0.0  |  master      | Korrekturen.md        |
-| 1.6.x           |  1.1.0  |  master      | Korrekturen.md        |
+| Julia version   | Version         | Branch       | Errata                | 
+|:---------------:|:---------------:|:------------:|:---------------------:|
+| 0.4.x           |                 |  de_2ed      | Korrekturen.md        |
+| 0.5.x           |                 |  de_2ed      | Korrekturen.md        |
+| 0.6.x           |                 |  de_2ed_j0.6 | Korrekturen.md        |
+| 1.0.x           |  1.0.0          |  master      | Korrekturen.md        |
+| 1.6.x           |  1.1.0  - 1.1.1 |  master      | Korrekturen.md        |
 
 Because of package dependencies it is recommended to use  Version 1.1.0 or later (and Julia Version 1.6 or later). 
 
